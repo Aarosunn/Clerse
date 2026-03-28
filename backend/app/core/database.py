@@ -7,10 +7,7 @@ from sqlalchemy.ext.asyncio import (
 
 from app.core.config import settings
 
-# Convert postgresql:// to postgresql+asyncpg://
-database_url = settings.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")
-
-engine = create_async_engine(database_url, echo=False)
+engine = create_async_engine(settings.DATABASE_URL, echo=False)
 AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
 
 
