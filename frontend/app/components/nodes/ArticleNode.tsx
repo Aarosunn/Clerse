@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Handle, Position, NodeProps, useReactFlow, NodeResizer } from "@xyflow/react";
 import { ArticleNodeData, ClaudeNodeData } from "@/types/nodes";
 import { buildUserMessage } from "@/lib/conversations";
+import { ArticleIcon, DownloadIcon, SparkleIcon } from "../Icons";
 
 function WindowControls() {
   return (
@@ -79,7 +80,7 @@ export default function ArticleNode({ id, data: rawData }: NodeProps<any>) {
         style={{ borderBottom: "1px solid rgba(188,200,209,0.12)", background: `rgba(74,124,89,0.04)` }}
       >
         <WindowControls />
-        <span className="material-symbols-outlined" style={{ fontSize: 16, color: ACCENT }}>article</span>
+        <ArticleIcon size={16} style={{ color: ACCENT }} />
         <span className="font-label uppercase tracking-widest text-on-surface-variant" style={{ fontSize: 10 }}>Article</span>
       </div>
 
@@ -99,7 +100,7 @@ export default function ArticleNode({ id, data: rawData }: NodeProps<any>) {
             className="w-8 h-8 rounded-full text-white flex items-center justify-center hover:brightness-110 disabled:opacity-40 active:scale-95 transition-all shrink-0"
             style={{ background: ACCENT }}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>download</span>
+            <DownloadIcon size={14} />
           </button>
         </div>
 
@@ -124,7 +125,7 @@ export default function ArticleNode({ id, data: rawData }: NodeProps<any>) {
               className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-white font-label uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all"
               style={{ fontSize: 10, background: ACCENT }}
             >
-              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>auto_awesome</span>
+              <SparkleIcon size={14} />
               Chat About This
             </button>
           </>

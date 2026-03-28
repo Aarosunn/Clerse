@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Handle, Position, NodeProps, useReactFlow, NodeResizer } from "@xyflow/react";
 import { YouTubeNodeData, ClaudeNodeData } from "@/types/nodes";
 import { buildUserMessage } from "@/lib/conversations";
+import { PlayCircleIcon, DownloadIcon, SparkleIcon } from "../Icons";
 
 function WindowControls() {
   return (
@@ -87,7 +88,7 @@ export default function YouTubeNode({ id, data: rawData }: NodeProps<any>) {
       >
         <div className="flex items-center gap-3">
           <WindowControls />
-          <span className="material-symbols-outlined" style={{ fontSize: 16, color: "#00668a" }}>play_circle</span>
+          <PlayCircleIcon size={16} style={{ color: "#00668a" }} />
           <span className="font-label uppercase tracking-widest text-on-surface-variant" style={{ fontSize: 10 }}>
             YouTube
           </span>
@@ -111,7 +112,7 @@ export default function YouTubeNode({ id, data: rawData }: NodeProps<any>) {
             className="w-8 h-8 rounded-full text-on-secondary flex items-center justify-center hover:brightness-110 disabled:opacity-40 active:scale-95 transition-all shrink-0"
             style={{ background: "#00668a" }}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>download</span>
+            <DownloadIcon size={14} />
           </button>
         </div>
 
@@ -136,7 +137,7 @@ export default function YouTubeNode({ id, data: rawData }: NodeProps<any>) {
               className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-on-secondary font-label uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all"
               style={{ fontSize: 10, background: "#00668a" }}
             >
-              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>auto_awesome</span>
+              <SparkleIcon size={14} />
               Chat About This
             </button>
           </>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useState, useEffect } from "react";
 import {
   ReactFlow,
   Edge,
@@ -15,9 +15,12 @@ import {
   useReactFlow,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+import { LiveblocksProvider, RoomProvider } from "@liveblocks/react";
 import { NodeKind, ClaudeNodeData } from "@/types/nodes";
 import { Message } from "@/types/messages";
+import { CURSOR_COLORS } from "@/lib/liveblocks";
 import Toolbar from "./Toolbar";
+import Presence from "./Presence";
 import ClaudeNode from "./nodes/ClaudeNode";
 import PDFNode from "./nodes/PDFNode";
 import YouTubeNode from "./nodes/YouTubeNode";
@@ -50,6 +53,25 @@ function CanvasInner({ workspaceId }: CanvasProps) {
   const [nodes, , onNodesChange] = useNodesState<any>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const { addNodes, addEdges } = useReactFlow();
+
+  /* ── Multiplayer: room activation ── */
+  const [roomId, setRoomId] = useState<string | null>(null);
+
+  // Auto-join room if ?room= param is in URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const room = params.get("room");
+    if (room) setRoomId(room);
+  }, []);
+
+  function activateRoom() {
+    const id = `clerse-${workspaceId}`;
+    setRoomId(id);
+    const url = new URL(window.location.href);
+    url.searchParams.set("room", id);
+    window.history.replaceState({}, "", url.toString());
+    navigator.clipboard.writeText(url.toString());
+  }
 
   const onConnect = useCallback(
     (connection: Connection) => setEdges((eds) => addEdge(connection, eds)),
@@ -195,8 +217,30 @@ function CanvasInner({ workspaceId }: CanvasProps) {
         </ReactFlow>
       </div>
 
+      {/* Multiplayer cursors — only active when room is joined */}
+      {roomId && process.env.NEXT_PUBLIC_LIVEBLOCKS_PUBLIC_KEY && (
+        <LiveblocksProvider publicApiKey={process.env.NEXT_PUBLIC_LIVEBLOCKS_PUBLIC_KEY}>
+          <RoomProvider
+            id={roomId}
+            initialPresence={{
+              cursor: null,
+              name: `User ${Math.floor(Math.random() * 900 + 100)}`,
+              color: CURSOR_COLORS[Math.floor(Math.random() * CURSOR_COLORS.length)],
+            }}
+          >
+            <Presence />
+          </RoomProvider>
+        </LiveblocksProvider>
+      )}
+
       {/* Taskbar — Layer 3 glassmorphism, fixed bottom center */}
-      <Toolbar onAddNode={spawnNode} onBranch={spawnBranch} workspaceId={workspaceId} />
+      <Toolbar
+        onAddNode={spawnNode}
+        onBranch={spawnBranch}
+        onShare={activateRoom}
+        roomId={roomId}
+        workspaceId={workspaceId}
+      />
     </div>
   );
 }

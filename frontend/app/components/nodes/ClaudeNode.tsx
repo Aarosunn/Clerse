@@ -6,6 +6,21 @@ import { ClaudeNodeData } from "@/types/nodes";
 import { Message } from "@/types/messages";
 import { buildUserMessage, buildAssistantMessage, getTextContent } from "@/lib/conversations";
 import ModelSelector from "../ModelSelector";
+import {
+  SparkleIcon,
+  CheckCircleIcon,
+  BranchIcon,
+  ChecklistIcon,
+  CloseIcon,
+  CheckIcon,
+  AddCircleIcon,
+  GlobeIcon,
+  HubIcon,
+  LocationIcon,
+  ArrowUpIcon,
+  CopyIcon,
+  ThumbUpIcon,
+} from "../Icons";
 
 /* MacOS-style window control dots */
 function WindowControls() {
@@ -110,7 +125,7 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
   function toggleSelect(index: number) {
     setSelectedIndices((prev) => {
       const next = new Set(prev);
-      next.has(index) ? next.delete(index) : next.add(index);
+      if (next.has(index)) { next.delete(index); } else { next.add(index); }
       return next;
     });
   }
@@ -195,9 +210,7 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
               className="flex items-center gap-1 px-2 py-1 rounded-full font-label uppercase tracking-widest text-white"
               style={{ fontSize: 9, background: "#00BFFF" }}
             >
-              <span className="material-symbols-outlined" style={{ fontSize: 12 }}>
-                check_circle
-              </span>
+              <CheckCircleIcon size={12} />
               Selecting
             </div>
           )}
@@ -209,9 +222,7 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
               className="flex items-center gap-1 px-2 py-1 rounded-full font-label uppercase tracking-widest text-on-tertiary hover:brightness-110 active:scale-95 transition-all"
               style={{ fontSize: 9, background: "#a43c12" }}
             >
-              <span className="material-symbols-outlined" style={{ fontSize: 12 }}>
-                call_split
-              </span>
+              <BranchIcon size={12} />
               Branch
             </button>
           )}
@@ -226,9 +237,7 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
             style={{ color: isSelecting ? "#00BFFF" : "#6d7981" }}
             title={isSelecting ? "Exit selection" : "Select messages to branch"}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-              {isSelecting ? "close" : "checklist"}
-            </span>
+            {isSelecting ? <CloseIcon size={14} /> : <ChecklistIcon size={14} />}
           </button>
         </div>
       </div>
@@ -244,9 +253,7 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
       >
         {messages.length === 0 && !streaming && (
           <div className="flex flex-col items-center justify-center h-24 gap-2 opacity-40">
-            <span className="material-symbols-outlined text-primary" style={{ fontSize: 28 }}>
-              auto_awesome
-            </span>
+            <SparkleIcon size={28} className="text-primary" />
             <p className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant">
               Start the stream
             </p>
@@ -275,9 +282,7 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
                       }}
                     >
                       {selectedIndices.has(i) && (
-                        <span className="material-symbols-outlined text-white" style={{ fontSize: 12 }}>
-                          check
-                        </span>
+                        <CheckIcon size={12} className="text-white" />
                       )}
                     </button>
                   )}
@@ -300,9 +305,7 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
                   <div
                     className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0 mt-0.5"
                   >
-                    <span className="material-symbols-outlined text-white" style={{ fontSize: 14 }}>
-                      auto_awesome
-                    </span>
+                    <SparkleIcon size={14} className="text-white" />
                   </div>
 
                   <div className="flex-1 min-w-0">
@@ -320,9 +323,7 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
                         onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(28,28,25,0.4)")}
                         title="Copy"
                       >
-                        <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                          content_copy
-                        </span>
+                        <CopyIcon size={14} />
                       </button>
                       <button
                         onClick={() => quickBranch(i)}
@@ -332,9 +333,7 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
                         onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(28,28,25,0.4)")}
                         title="Branch from here"
                       >
-                        <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                          call_split
-                        </span>
+                        <BranchIcon size={14} />
                         Branch
                       </button>
                       <button
@@ -344,9 +343,7 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
                         onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(28,28,25,0.4)")}
                         title="Thumbs up"
                       >
-                        <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                          thumb_up
-                        </span>
+                        <ThumbUpIcon size={14} />
                       </button>
                     </div>
                   </div>
@@ -364,9 +361,7 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
                       }}
                     >
                       {selectedIndices.has(i) && (
-                        <span className="material-symbols-outlined text-white" style={{ fontSize: 12 }}>
-                          check
-                        </span>
+                        <CheckIcon size={12} className="text-white" />
                       )}
                     </button>
                   )}
@@ -379,9 +374,7 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
           {streaming && streamText && (
             <div className="flex items-start gap-3">
               <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0 mt-0.5">
-                <span className="material-symbols-outlined text-white" style={{ fontSize: 14 }}>
-                  auto_awesome
-                </span>
+                <SparkleIcon size={14} className="text-white" />
               </div>
               <div className="font-body text-sm text-on-surface leading-relaxed flex-1">
                 {streamText}
@@ -397,9 +390,7 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
           {streaming && !streamText && (
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                <span className="material-symbols-outlined text-white" style={{ fontSize: 14 }}>
-                  auto_awesome
-                </span>
+                <SparkleIcon size={14} className="text-white" />
               </div>
               <div className="flex items-center gap-1">
                 {[0, 150, 300].map((delay) => (
@@ -431,14 +422,10 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
           {/* Left utilities */}
           <div className="absolute left-3 flex items-center gap-1.5 z-10">
             <button className="text-on-surface-variant/40 hover:text-primary transition-colors">
-              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-                add_circle
-              </span>
+              <AddCircleIcon size={16} />
             </button>
             <button className="text-on-surface-variant/40 hover:text-primary transition-colors">
-              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-                language
-              </span>
+              <GlobeIcon size={16} />
             </button>
           </div>
 
@@ -480,9 +467,7 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
             className="absolute right-2 p-2 rounded-xl text-on-primary hover:brightness-110 disabled:opacity-40 active:scale-95 transition-all"
             style={{ background: "#476083" }}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-              arrow_upward
-            </span>
+            <ArrowUpIcon size={14} />
           </button>
         </div>
 
@@ -492,14 +477,14 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
             className="flex items-center gap-1 px-2 py-0.5 rounded-full font-label uppercase tracking-widest text-on-surface-variant/50 hover:text-primary transition-colors"
             style={{ fontSize: 9, background: "rgba(71,96,131,0.06)" }}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 11 }}>hub</span>
+            <HubIcon size={11} />
             Attach Nodes
           </button>
           <button
             className="flex items-center gap-1 px-2 py-0.5 rounded-full font-label uppercase tracking-widest text-on-surface-variant/50 hover:text-secondary transition-colors"
             style={{ fontSize: 9, background: "rgba(0,102,138,0.06)" }}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 11 }}>location_on</span>
+            <LocationIcon size={11} />
             Spatial Context
           </button>
         </div>

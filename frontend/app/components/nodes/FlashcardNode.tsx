@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { Handle, Position, NodeProps, NodeResizer } from "@xyflow/react";
 import { FlashcardNodeData, FlashCard } from "@/types/nodes";
+import { FlashcardIcon, SparkleIcon, ChevronLeftIcon, ChevronRightIcon } from "../Icons";
 
 function WindowControls() {
   return (
@@ -80,7 +81,7 @@ export default function FlashcardNode({ data: rawData }: NodeProps<any>) {
       >
         <div className="flex items-center gap-3">
           <WindowControls />
-          <span className="material-symbols-outlined" style={{ fontSize: 16, color: ACCENT }}>style</span>
+          <FlashcardIcon size={16} style={{ color: ACCENT }} />
           <span className="font-label uppercase tracking-widest text-on-surface-variant" style={{ fontSize: 10 }}>Flashcards</span>
         </div>
         {cards.length > 0 && (
@@ -111,7 +112,7 @@ export default function FlashcardNode({ data: rawData }: NodeProps<any>) {
                 <span className="animate-pulse">Generating…</span>
               ) : (
                 <>
-                  <span className="material-symbols-outlined" style={{ fontSize: 14 }}>auto_awesome</span>
+                  <SparkleIcon size={14} />
                   Generate Cards
                 </>
               )}
@@ -148,7 +149,7 @@ export default function FlashcardNode({ data: rawData }: NodeProps<any>) {
                 className="w-8 h-8 rounded-full flex items-center justify-center disabled:opacity-30 hover:bg-surface-container transition-all active:scale-95"
                 style={{ background: "#f0ede8" }}
               >
-                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>chevron_left</span>
+                <ChevronLeftIcon size={16} />
               </button>
               <button
                 onClick={() => { setCards([]); setSourceText(""); }}
@@ -163,7 +164,7 @@ export default function FlashcardNode({ data: rawData }: NodeProps<any>) {
                 className="w-8 h-8 rounded-full flex items-center justify-center disabled:opacity-30 hover:bg-surface-container transition-all active:scale-95"
                 style={{ background: "#f0ede8" }}
               >
-                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>chevron_right</span>
+                <ChevronRightIcon size={16} />
               </button>
             </div>
           </>

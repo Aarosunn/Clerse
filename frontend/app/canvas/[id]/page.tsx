@@ -1,5 +1,6 @@
 import Canvas from "@/app/components/Canvas";
 import Link from "next/link";
+import { ArrowBackIcon } from "@/app/components/Icons";
 
 interface Props {
   params: { id: string };
@@ -19,9 +20,7 @@ export default function CanvasPage({ params }: Props) {
           border: "1px solid rgba(188,200,209,0.2)",
         }}
       >
-        <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-          arrow_back
-        </span>
+        <ArrowBackIcon size={14} />
         Workspaces
       </Link>
 

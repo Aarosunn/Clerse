@@ -1,8 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useState, ReactNode } from "react";
 import { NodeKind } from "@/types/nodes";
 import { Message } from "@/types/messages";
+import {
+  PanToolIcon,
+  SelectIcon,
+  ConnectIcon,
+  SparkleIcon,
+  PdfIcon,
+  PlayCircleIcon,
+  ArticleIcon,
+  ImageIcon,
+  FlashcardIcon,
+  ShareIcon,
+  GroupIcon,
+  CheckCircleIcon,
+} from "./Icons";
 
 interface ToolbarProps {
   onAddNode: (kind: NodeKind) => void;
@@ -11,39 +25,40 @@ interface ToolbarProps {
     parentPosition: { x: number; y: number },
     messages: Message[]
   ) => void;
+  onShare: () => void;
+  roomId: string | null;
   workspaceId?: string;
 }
 
 /* Canvas tool buttons (pan, select, connect) */
-const CANVAS_TOOLS = [
-  { icon: "pan_tool", label: "Pan" },
-  { icon: "ads_click", label: "Select" },
-  { icon: "polyline", label: "Connect" },
+const CANVAS_TOOLS: { icon: (size: number) => ReactNode; id: string; label: string }[] = [
+  { id: "pan", icon: (s) => <PanToolIcon size={s} />, label: "Pan" },
+  { id: "select", icon: (s) => <SelectIcon size={s} />, label: "Select" },
+  { id: "connect", icon: (s) => <ConnectIcon size={s} />, label: "Connect" },
 ];
 
 /* Node type creation buttons */
-const NODE_TOOLS: { kind: NodeKind; icon: string; label: string; color: string }[] = [
-  { kind: "claude",    icon: "auto_awesome",   label: "Claude",   color: "#476083" },
-  { kind: "pdf",       icon: "picture_as_pdf", label: "PDF",      color: "#a43c12" },
-  { kind: "youtube",   icon: "play_circle",    label: "YouTube",  color: "#00668a" },
-  { kind: "article",   icon: "article",        label: "Article",  color: "#4a7c59" },
-  { kind: "image",     icon: "image",          label: "Image",    color: "#7b5ea7" },
-  { kind: "flashcard", icon: "style",          label: "Cards",    color: "#c89b3c" },
+const NODE_TOOLS: { kind: NodeKind; icon: (s: number) => ReactNode; label: string; color: string }[] = [
+  { kind: "claude",    icon: (s) => <SparkleIcon size={s} />,     label: "Claude",   color: "#476083" },
+  { kind: "pdf",       icon: (s) => <PdfIcon size={s} />,         label: "PDF",      color: "#a43c12" },
+  { kind: "youtube",   icon: (s) => <PlayCircleIcon size={s} />,  label: "YouTube",  color: "#00668a" },
+  { kind: "article",   icon: (s) => <ArticleIcon size={s} />,     label: "Article",  color: "#4a7c59" },
+  { kind: "image",     icon: (s) => <ImageIcon size={s} />,       label: "Image",    color: "#7b5ea7" },
+  { kind: "flashcard", icon: (s) => <FlashcardIcon size={s} />,   label: "Cards",    color: "#c89b3c" },
 ];
 
 function Divider() {
   return <div className="w-px h-6 bg-primary/10 mx-2" />;
 }
 
-export default function Toolbar({ onAddNode, workspaceId }: ToolbarProps) {
-  const [activeTool, setActiveTool] = useState("pan_tool");
+export default function Toolbar({ onAddNode, onShare, roomId }: ToolbarProps) {
+  const [activeTool, setActiveTool] = useState("pan");
   const [copied, setCopied] = useState(false);
 
   function shareCanvas() {
-    navigator.clipboard.writeText(window.location.href).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
+    onShare();
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   }
 
   return (
@@ -61,18 +76,16 @@ export default function Toolbar({ onAddNode, workspaceId }: ToolbarProps) {
       {/* Canvas tools */}
       {CANVAS_TOOLS.map((tool) => (
         <button
-          key={tool.icon}
+          key={tool.id}
           title={tool.label}
-          onClick={() => setActiveTool(tool.icon)}
+          onClick={() => setActiveTool(tool.id)}
           className="flex flex-col items-center justify-center w-10 h-10 rounded-xl transition-all hover:scale-110 active:scale-95"
           style={{
-            color: activeTool === tool.icon ? "#476083" : "#6d7981",
-            background: activeTool === tool.icon ? "rgba(71,96,131,0.08)" : "transparent",
+            color: activeTool === tool.id ? "#476083" : "#6d7981",
+            background: activeTool === tool.id ? "rgba(71,96,131,0.08)" : "transparent",
           }}
         >
-          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-            {tool.icon}
-          </span>
+          {tool.icon(18)}
           <span
             className="font-label uppercase tracking-widest mt-0.5"
             style={{ fontSize: 7 }}
@@ -93,9 +106,7 @@ export default function Toolbar({ onAddNode, workspaceId }: ToolbarProps) {
           className="flex flex-col items-center justify-center w-10 h-10 rounded-xl transition-all hover:scale-110 active:scale-95 hover:bg-surface-container/60"
           style={{ color }}
         >
-          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-            {icon}
-          </span>
+          {icon(18)}
           <span
             className="font-label uppercase tracking-widest mt-0.5"
             style={{ fontSize: 7, color: "#6d7981" }}
@@ -107,23 +118,32 @@ export default function Toolbar({ onAddNode, workspaceId }: ToolbarProps) {
 
       <Divider />
 
-      {/* Share */}
+      {/* Share / Live indicator */}
       <button
-        title="Copy share link"
+        title={roomId ? "Room active — copy link" : "Go live & copy share link"}
         onClick={shareCanvas}
         className="flex flex-col items-center justify-center w-10 h-10 rounded-xl transition-all hover:scale-110 active:scale-95"
-        style={{ color: copied ? "#27c93f" : "#00668a" }}
+        style={{ color: copied ? "#27c93f" : roomId ? "#00BFFF" : "#00668a" }}
       >
-        <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-          {copied ? "check_circle" : "share"}
-        </span>
+        {copied ? (
+          <CheckCircleIcon size={18} />
+        ) : roomId ? (
+          <GroupIcon size={18} />
+        ) : (
+          <ShareIcon size={18} />
+        )}
         <span
           className="font-label uppercase tracking-widest mt-0.5"
-          style={{ fontSize: 7, color: "#6d7981" }}
+          style={{ fontSize: 7, color: roomId && !copied ? "#00BFFF" : "#6d7981" }}
         >
-          {copied ? "Copied" : "Share"}
+          {copied ? "Copied" : roomId ? "Live" : "Share"}
         </span>
       </button>
+
+      {/* Live pulse indicator */}
+      {roomId && !copied && (
+        <div className="absolute -top-1 right-4 w-2.5 h-2.5 rounded-full bg-[#00BFFF] animate-pulse" />
+      )}
     </div>
   );
 }

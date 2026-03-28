@@ -4,6 +4,14 @@ import { useState, useRef } from "react";
 import { Handle, Position, NodeProps, useReactFlow, NodeResizer } from "@xyflow/react";
 import { PDFNodeData, ClaudeNodeData } from "@/types/nodes";
 import { buildUserMessage } from "@/lib/conversations";
+import {
+  DescriptionIcon,
+  ExpandIcon,
+  CollapseIcon,
+  UploadIcon,
+  LoadingIcon,
+  SparkleIcon,
+} from "../Icons";
 
 function WindowControls() {
   return (
@@ -93,9 +101,7 @@ export default function PDFNode({ id, data: rawData }: NodeProps<any>) {
         {/* Mac controls + file name */}
         <div className="flex items-center gap-3">
           <WindowControls />
-          <span className="material-symbols-outlined text-primary" style={{ fontSize: 16 }}>
-            description
-          </span>
+          <DescriptionIcon size={16} className="text-primary" />
           <span
             className="font-label uppercase tracking-widest text-on-surface truncate max-w-[160px]"
             style={{ fontSize: 10 }}
@@ -109,9 +115,7 @@ export default function PDFNode({ id, data: rawData }: NodeProps<any>) {
           onClick={() => setExpanded((v) => !v)}
           className="text-outline hover:text-on-surface transition-colors cursor-pointer"
         >
-          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-            {expanded ? "close_fullscreen" : "open_in_full"}
-          </span>
+          {expanded ? <CollapseIcon size={16} /> : <ExpandIcon size={16} />}
         </button>
       </div>
 
@@ -138,12 +142,11 @@ export default function PDFNode({ id, data: rawData }: NodeProps<any>) {
           >
             {loading ? (
               <div className="flex flex-col items-center gap-3">
-                <span
-                  className="material-symbols-outlined animate-spin"
-                  style={{ fontSize: 32, color: "#a43c12", opacity: 0.6 }}
-                >
-                  progress_activity
-                </span>
+                <LoadingIcon
+                  size={32}
+                  className="animate-spin"
+                  style={{ color: "#a43c12", opacity: 0.6 }}
+                />
                 <p
                   className="font-label uppercase tracking-widest"
                   style={{ fontSize: 10, color: "#a43c12" }}
@@ -153,12 +156,10 @@ export default function PDFNode({ id, data: rawData }: NodeProps<any>) {
               </div>
             ) : (
               <div className="flex flex-col items-center gap-3 p-6">
-                <span
-                  className="material-symbols-outlined"
-                  style={{ fontSize: 40, color: "#a43c12", opacity: 0.35 }}
-                >
-                  upload_file
-                </span>
+                <UploadIcon
+                  size={40}
+                  style={{ color: "#a43c12", opacity: 0.35 }}
+                />
                 <p
                   className="font-label uppercase tracking-widest text-center"
                   style={{ fontSize: 10, color: "#6d7981" }}
@@ -216,9 +217,7 @@ export default function PDFNode({ id, data: rawData }: NodeProps<any>) {
                   className="mt-2 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-on-tertiary font-label uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all"
                   style={{ fontSize: 9, background: "#a43c12" }}
                 >
-                  <span className="material-symbols-outlined" style={{ fontSize: 12 }}>
-                    auto_awesome
-                  </span>
+                  <SparkleIcon size={12} />
                   Chat About This
                 </button>
               </div>

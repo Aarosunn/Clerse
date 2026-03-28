@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { Handle, Position, NodeProps, useReactFlow, NodeResizer } from "@xyflow/react";
 import { ImageNodeData, ClaudeNodeData } from "@/types/nodes";
 import { buildImageMessage } from "@/lib/conversations";
+import { ImageIcon, AddPhotoIcon, SparkleIcon } from "../Icons";
 
 function WindowControls() {
   return (
@@ -75,7 +76,7 @@ export default function ImageNode({ id, data: rawData }: NodeProps<any>) {
         style={{ borderBottom: "1px solid rgba(188,200,209,0.12)", background: `rgba(123,94,167,0.04)` }}
       >
         <WindowControls />
-        <span className="material-symbols-outlined" style={{ fontSize: 16, color: ACCENT }}>image</span>
+        <ImageIcon size={16} style={{ color: ACCENT }} />
         <span className="font-label uppercase tracking-widest text-on-surface-variant" style={{ fontSize: 10 }}>Image</span>
       </div>
 
@@ -96,7 +97,7 @@ export default function ImageNode({ id, data: rawData }: NodeProps<any>) {
               if (file?.type.startsWith("image/")) handleFile(file);
             }}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 36, color: ACCENT, opacity: 0.4 }}>add_photo_alternate</span>
+            <AddPhotoIcon size={36} style={{ color: ACCENT, opacity: 0.4 }} />
             <p className="font-label uppercase tracking-widest mt-2" style={{ fontSize: 10, color: "#6d7981" }}>
               Drop image or click
             </p>
@@ -129,7 +130,7 @@ export default function ImageNode({ id, data: rawData }: NodeProps<any>) {
               className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-white font-label uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all"
               style={{ fontSize: 10, background: ACCENT }}
             >
-              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>auto_awesome</span>
+              <SparkleIcon size={14} />
               Analyze with Claude
             </button>
           </>
