@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Handle, Position, NodeProps, useReactFlow, NodeResizer } from "@xyflow/react";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
@@ -8,6 +8,7 @@ import rehypeKatex from "rehype-katex";
 import { ClaudeNodeData } from "@/types/nodes";
 import { Message } from "@/types/messages";
 import { buildUserMessage, buildAssistantMessage, getTextContent } from "@/lib/conversations";
+import { useConnectMode } from "../Canvas";
 import ModelSelector from "../ModelSelector";
 import WindowControls from "./WindowControls";
 import {
@@ -37,6 +38,19 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
   const [isSelecting, setIsSelecting] = useState(false);
   const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set());
   const [minimized, setMinimized] = useState(false);
+
+  /* ── Referenced messages from connected nodes ── */
+  const [referencedMessages, setReferencedMessages] = useState<Message[]>(
+    data.referencedMessages ?? []
+  );
+
+  useEffect(() => {
+    if (data.referencedMessages && data.referencedMessages.length > 0) {
+      setReferencedMessages(data.referencedMessages);
+    }
+  }, [data.referencedMessages]);
+
+  const { startConnect: startConnectMode } = useConnectMode();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -89,14 +103,13 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
         model,
         initialMessages: branchMessages,
       } satisfies ClaudeNodeData,
-      style: { width: 420 },
+      style: { width: 480 },
     });
     addEdges({
       id: `${id}-${branchId}`,
       source: id,
       target: branchId,
-      animated: true,
-      style: { stroke: "#00668a", strokeWidth: 1.5 },
+      type: "river",
     });
 
     setIsSelecting(false);
@@ -127,7 +140,7 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
                 ...n,
                 style: {
                   ...n.style,
-                  width: newMinimized ? 280 : 420,
+                  width: newMinimized ? 280 : 480,
                   height: newMinimized ? 'auto' : undefined,
                 },
               }
@@ -156,14 +169,13 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
         model,
         initialMessages: messages.slice(0, upToIndex + 1),
       } satisfies ClaudeNodeData,
-      style: { width: 420 },
+      style: { width: 480 },
     });
     addEdges({
       id: `${id}-${branchId}`,
       source: id,
       target: branchId,
-      animated: true,
-      style: { stroke: "#00668a", strokeWidth: 1.5 },
+      type: "river",
     });
   }
 
@@ -174,13 +186,13 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
       style={{
         width: "100%",
         minHeight: minimized ? 48 : 320,
-        height: minimized ? 'auto' : undefined,
+        height: minimized ? 'auto' : "100%",
         border: "1px solid rgba(188,200,209,0.10)",
         boxShadow: "0 12px 40px rgba(28,28,25,0.06)",
       }}
     >
-      {!minimized && <NodeResizer minWidth={320} minHeight={260} color="#476083" />}
-      <Handle type="target" position={Position.Top} />
+      {!minimized && <NodeResizer minWidth={480} minHeight={260} color="#476083" />}
+      <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
 
       {/* ── Header §2 ── */}
       <div
@@ -211,7 +223,7 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
 
         {/* Right: model tag + selecting badge + branch action (hide when minimized) */}
         {!minimized && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap justify-end">
             <ModelSelector value={model} onChange={setModel} />
 
             {/* CHAT_NODE_DESIGN.md §2 — Selecting button (always visible) */}
@@ -233,22 +245,49 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
               Selecting
             </button>
 
-            {/* Branch button (always visible) */}
+            {/* Branch button — starts river connection line */}
             <button
-              onClick={branchFromSelection}
-              disabled={selectedIndices.size === 0}
+              onClick={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const origin = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+                const cached = selectedIndices.size > 0
+                  ? Array.from(selectedIndices).sort((a, b) => a - b).map((i) => messages[i])
+                  : [...messages];
+                startConnectMode(id, cached, origin);
+                setIsSelecting(false);
+                setSelectedIndices(new Set());
+              }}
+              disabled={messages.length === 0}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-full font-label uppercase tracking-widest transition-all disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
               style={{
                 fontSize: 10,
-                background: "#a43c12",
+                background: "#00668a",
                 color: "white",
                 fontWeight: 600,
               }}
-              title={selectedIndices.size === 0 ? "Select messages to branch" : "Create branch from selection"}
+              title="Connect context to another node"
             >
               <BranchIcon size={12} />
               Branch
             </button>
+
+            {/* Create Branch button — instantly spawns a new node (only when selecting) */}
+            {isSelecting && selectedIndices.size > 0 && (
+              <button
+                onClick={branchFromSelection}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full font-label uppercase tracking-widest transition-all whitespace-nowrap"
+                style={{
+                  fontSize: 10,
+                  background: "#a43c12",
+                  color: "white",
+                  fontWeight: 600,
+                }}
+                title="Create a new branch node from selection"
+              >
+                <AddCircleIcon size={12} />
+                Create Branch
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -259,10 +298,63 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
         style={{
           padding: "24px 32px",
           background: "rgba(252,249,244,0.5)",
-          maxHeight: 380,
         }}
       >
-        {messages.length === 0 && !streaming && (
+        {/* Referenced context from connected nodes */}
+        {referencedMessages.length > 0 && (
+          <div
+            className="mb-4 rounded-lg overflow-hidden"
+            style={{
+              border: "1px solid rgba(0,191,255,0.2)",
+              background: "rgba(0,191,255,0.04)",
+            }}
+          >
+            <div
+              className="flex items-center gap-2 px-3 py-1.5"
+              style={{
+                background: "rgba(0,191,255,0.08)",
+                borderBottom: "1px solid rgba(0,191,255,0.12)",
+              }}
+            >
+              <HubIcon size={12} className="text-[#00668a]" />
+              <span
+                className="font-label uppercase tracking-widest text-[#00668a]"
+                style={{ fontSize: 9, fontWeight: 600 }}
+              >
+                Referenced Context
+              </span>
+              <span
+                className="font-label text-[#00668a]/50 ml-auto"
+                style={{ fontSize: 9 }}
+              >
+                {referencedMessages.length} message{referencedMessages.length !== 1 ? "s" : ""}
+              </span>
+            </div>
+            <div className="px-3 py-2 space-y-2 max-h-32 overflow-y-auto">
+              {referencedMessages.map((msg, i) => (
+                <div
+                  key={`ref-${i}`}
+                  className="font-body text-xs text-on-surface/70 leading-relaxed"
+                >
+                  <span
+                    className="font-label uppercase tracking-widest mr-1.5"
+                    style={{
+                      fontSize: 8,
+                      color: msg.role === "user" ? "#a43c12" : "#476083",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {msg.role === "user" ? "User" : "Claude"}:
+                  </span>
+                  {getTextContent(msg.content).slice(0, 120)}
+                  {getTextContent(msg.content).length > 120 ? "..." : ""}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {messages.length === 0 && !streaming && referencedMessages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-24 gap-2 opacity-40">
             <SparkleIcon size={28} className="text-primary" />
             <p className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant">
@@ -298,7 +390,7 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
                     </button>
                   )}
                   <div
-                    className="font-body text-sm text-on-surface leading-relaxed px-5 py-4 max-w-[88%]"
+                    className="font-body text-sm text-on-surface leading-relaxed px-5 py-4 max-w-[88%] break-words whitespace-pre-wrap"
                     style={{
                       background: "rgba(235,232,227,0.80)",
                       borderRadius: "0.75rem 0.75rem 0 0.75rem",
@@ -519,7 +611,7 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
         </div>
       </div>}
 
-      <Handle type="source" position={Position.Bottom} />
+      <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} />
     </div>
   );
 }

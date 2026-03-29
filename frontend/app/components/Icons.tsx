@@ -537,6 +537,17 @@ export function NorthEastIcon(p: IconProps) {
   );
 }
 
+export function TextIcon(p: IconProps) {
+  return wrap(
+    <>
+      <path d="M4 7V4h16v3" />
+      <path d="M12 4v16" />
+      <path d="M8 20h8" />
+    </>,
+    p
+  );
+}
+
 export function WaterDropIcon(p: IconProps) {
   return wrap(
     <>

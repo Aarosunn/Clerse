@@ -1,9 +1,10 @@
 "use client";
 
-import { createContext, useCallback, useState, useEffect, useContext } from "react";
+import { createContext, useCallback, useState, useEffect, useContext, useRef } from "react";
 import {
   ReactFlow,
   Edge,
+  EdgeTypes,
   Node,
   NodeTypes,
   addEdge,
@@ -29,6 +30,8 @@ import YouTubeNode from "./nodes/YouTubeNode";
 import ArticleNode from "./nodes/ArticleNode";
 import ImageNode from "./nodes/ImageNode";
 import FlashcardNode from "./nodes/FlashcardNode";
+import TextNode from "./nodes/TextNode";
+import RiverEdge from "./edges/RiverEdge";
 import {
   SparkleIcon,
   PdfIcon,
@@ -36,16 +39,21 @@ import {
   ArticleIcon as ArticleIconComponent,
   ImageIcon as ImageIconComponent,
   FlashcardIcon,
+  TextIcon as TextIconComponent,
 } from "./Icons";
 
 /* ── Connect mode context ── */
 interface ConnectContextValue {
   connectingFrom: string | null;
-  startConnect: (nodeId: string) => void;
+  cachedMessages: Message[] | null;
+  connectionOrigin: { x: number; y: number } | null;
+  startConnect: (nodeId: string, messages?: Message[], origin?: { x: number; y: number }) => void;
 }
 
 export const ConnectContext = createContext<ConnectContextValue>({
   connectingFrom: null,
+  cachedMessages: null,
+  connectionOrigin: null,
   startConnect: () => {},
 });
 
@@ -67,7 +75,78 @@ const nodeTypes: NodeTypes = {
   image: ImageNode as any,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   flashcard: FlashcardNode as any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  text: TextNode as any,
 };
+
+const edgeTypes: EdgeTypes = {
+  river: RiverEdge,
+};
+
+/* ── Wavy connection line preview ── */
+/* Mirrors RiverEdge: same amplitude, frequency, noise, color, and glow */
+function WavyConnectionLine({ sourceX, sourceY, targetX, targetY }: {
+  sourceX: number; sourceY: number; targetX: number; targetY: number;
+}) {
+  const dx = targetX - sourceX;
+  const dy = targetY - sourceY;
+  const len = Math.sqrt(dx * dx + dy * dy);
+  const nx = len > 0 ? -(dy / len) : 0;
+  const ny = len > 0 ? dx / len : 0;
+
+  const pathRef = useRef<SVGPathElement>(null);
+
+  useEffect(() => {
+    let animationFrameId: number;
+    const startTime = performance.now();
+
+    const animate = (time: number) => {
+      const elapsedTime = time - startTime;
+      const phase = (elapsedTime / 1000) * -1.5;
+
+      const segments = 64;
+      const amplitude = 8;
+      const frequency = 1.2;
+      const points: string[] = [];
+      for (let i = 0; i <= segments; i++) {
+        const t = i / segments;
+        const baseX = sourceX + dx * t;
+        const baseY = sourceY + dy * t;
+        const waveMain = Math.sin(t * frequency * Math.PI * 2 + phase) * amplitude;
+        const waveNoise = Math.sin(t * (frequency * 2.13) * Math.PI * 2 + phase * 1.3) * (amplitude * 0.35);
+        const wave = waveMain + waveNoise;
+        const taper = Math.sin(t * Math.PI);
+        const px = baseX + nx * wave * taper;
+        const py = baseY + ny * wave * taper;
+        points.push(i === 0 ? `M ${px} ${py}` : `L ${px} ${py}`);
+      }
+
+      if (pathRef.current) {
+        pathRef.current.setAttribute("d", points.join(" "));
+      }
+
+      animationFrameId = requestAnimationFrame(animate);
+    };
+
+    animationFrameId = requestAnimationFrame(animate);
+
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [sourceX, sourceY, dx, dy, nx, ny]);
+
+  return (
+    <path
+      ref={pathRef}
+      fill="none"
+      stroke="#739AB5"
+      strokeWidth={6}
+      strokeOpacity={0.6}
+      strokeLinecap="round"
+      style={{
+        filter: "drop-shadow(0 0 4px rgba(115,154,181,0.5))",
+      }}
+    />
+  );
+}
 
 interface CanvasProps {
   workspaceId: string;
@@ -77,41 +156,77 @@ function CanvasInner({ workspaceId }: CanvasProps) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [nodes, , onNodesChange] = useNodesState<any>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
-  const { addNodes, addEdges, getNode, flowToScreenPosition } = useReactFlow();
+  const { addNodes, addEdges, getNode, setNodes, flowToScreenPosition } = useReactFlow();
 
   /* ── Connect mode state ── */
   const [connectingFrom, setConnectingFrom] = useState<string | null>(null);
+  const [cachedMessages, setCachedMessages] = useState<Message[] | null>(null);
   const [mouseScreen, setMouseScreen] = useState<{ x: number; y: number } | null>(null);
+
+  const [connectionOrigin, setConnectionOrigin] = useState<{ x: number; y: number } | null>(null);
 
   /* ── Node drag preview state ── */
   const [draggingNodeType, setDraggingNodeType] = useState<NodeKind | null>(null);
-  const [dragMousePos, setDragMousePos] = useState<{ x: number; y: number } | null>(null);
+  const dragPreviewRef = useRef<HTMLDivElement>(null);
 
-  function startConnect(nodeId: string) {
+  function startConnect(nodeId: string, messages?: Message[], origin?: { x: number; y: number }) {
     setConnectingFrom(nodeId);
+    setCachedMessages(messages ?? null);
+    setConnectionOrigin(origin ?? null);
   }
 
   function completeConnect(targetNodeId: string) {
-    if (connectingFrom && connectingFrom !== targetNodeId) {
-      setEdges((eds) =>
-        addEdge(
-          {
-            id: `${connectingFrom}-${targetNodeId}`,
-            source: connectingFrom,
-            target: targetNodeId,
-            animated: true,
-            style: { stroke: "#00668a", strokeWidth: 1.5 },
-          },
-          eds
-        )
+    if (!connectingFrom || connectingFrom === targetNodeId) {
+      cancelConnect();
+      return;
+    }
+
+    // Connection restriction: only claude → claude
+    const targetNode = getNode(targetNodeId);
+    if (targetNode?.type !== "claude") {
+      cancelConnect();
+      return;
+    }
+
+    // Create river edge
+    setEdges((eds) =>
+      addEdge(
+        {
+          id: `${connectingFrom}-${targetNodeId}`,
+          source: connectingFrom,
+          target: targetNodeId,
+          type: "river",
+        },
+        eds
+      )
+    );
+
+    // Inject cached messages as referencedMessages into target node
+    if (cachedMessages && cachedMessages.length > 0) {
+      setNodes((nds) =>
+        nds.map((n) => {
+          if (n.id !== targetNodeId) return n;
+          const existing = (n.data as Record<string, unknown>).referencedMessages as Message[] | undefined;
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              referencedMessages: [...(existing ?? []), ...cachedMessages],
+            },
+          };
+        })
       );
     }
+
     setConnectingFrom(null);
+    setCachedMessages(null);
+    setConnectionOrigin(null);
     setMouseScreen(null);
   }
 
   function cancelConnect() {
     setConnectingFrom(null);
+    setCachedMessages(null);
     setMouseScreen(null);
   }
 
@@ -122,7 +237,6 @@ function CanvasInner({ workspaceId }: CanvasProps) {
 
   function cancelDrag() {
     setDraggingNodeType(null);
-    setDragMousePos(null);
   }
 
   function placeDraggingNode(e: React.MouseEvent) {
@@ -147,8 +261,9 @@ function CanvasInner({ workspaceId }: CanvasProps) {
     if (connectingFrom) {
       setMouseScreen({ x: e.clientX, y: e.clientY });
     }
-    if (draggingNodeType) {
-      setDragMousePos({ x: e.clientX, y: e.clientY });
+    if (draggingNodeType && dragPreviewRef.current) {
+      // Update style directly on the ref, bypassing React render lifecycle
+      dragPreviewRef.current.style.transform = `translate(${e.clientX - 32}px, ${e.clientY - 32}px)`;
     }
   }
 
@@ -222,9 +337,12 @@ function CanvasInner({ workspaceId }: CanvasProps) {
       case "flashcard":
         data = { kind: "flashcard", label: "Flashcards", cards: [], sourceNodeId: "" };
         break;
+      case "text":
+        data = { kind: "text", label: "Text", content: "" };
+        break;
     }
 
-    addNodes({ id, type: kind, position: pos, data: data as Record<string, unknown>, style: { width: kind === "claude" ? 420 : 340 } });
+    addNodes({ id, type: kind, position: pos, data: data as Record<string, unknown>, style: { width: kind === "claude" ? 480 : 340 } });
     return id;
   }
 
@@ -242,8 +360,7 @@ function CanvasInner({ workspaceId }: CanvasProps) {
       id: `${parentId}-${branchId}`,
       source: parentId,
       target: branchId,
-      animated: true,
-      style: { stroke: "#00668a", strokeWidth: 1.5 },
+      type: "river",
     });
   }
 
@@ -254,6 +371,7 @@ function CanvasInner({ workspaceId }: CanvasProps) {
     article: "#4a7c59",
     image: "#7b5ea7",
     flashcard: "#c89b3c",
+    text: "#6d7981",
   };
 
   /* ── Connection line: compute source screen position ── */
@@ -267,10 +385,10 @@ function CanvasInner({ workspaceId }: CanvasProps) {
     });
   }
 
-  const sourcePos = connectingFrom ? getSourceScreenPos() : null;
+  const sourcePos = connectionOrigin ?? (connectingFrom ? getSourceScreenPos() : null);
 
   return (
-    <ConnectContext.Provider value={{ connectingFrom, startConnect }}>
+    <ConnectContext.Provider value={{ connectingFrom, cachedMessages, connectionOrigin, startConnect }}>
       <div
         className="w-full h-full relative overflow-hidden"
         style={{
@@ -334,6 +452,7 @@ function CanvasInner({ workspaceId }: CanvasProps) {
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
             nodeTypes={nodeTypes}
+            edgeTypes={edgeTypes}
             onNodeClick={(_event: React.MouseEvent, node: Node) => {
               if (connectingFrom) {
                 completeConnect(node.id);
@@ -363,28 +482,24 @@ function CanvasInner({ workspaceId }: CanvasProps) {
           </ReactFlow>
         </div>
 
-        {/* Connection line overlay — follows cursor from source node */}
+        {/* Connection line overlay — wavy river preview */}
         {connectingFrom && mouseScreen && sourcePos && (
           <svg
             className="fixed inset-0 w-screen h-screen pointer-events-none"
             style={{ zIndex: 9999 }}
           >
-            <line
-              x1={sourcePos.x}
-              y1={sourcePos.y}
-              x2={mouseScreen.x}
-              y2={mouseScreen.y}
-              stroke="#00BFFF"
-              strokeWidth={2}
-              strokeDasharray="8 4"
-              opacity={0.8}
+            <WavyConnectionLine
+              sourceX={sourcePos.x}
+              sourceY={sourcePos.y}
+              targetX={mouseScreen.x}
+              targetY={mouseScreen.y}
             />
             <circle
               cx={mouseScreen.x}
               cy={mouseScreen.y}
               r={6}
               fill="none"
-              stroke="#00BFFF"
+              stroke="#739AB5"
               strokeWidth={1.5}
               opacity={0.6}
             />
@@ -408,12 +523,17 @@ function CanvasInner({ workspaceId }: CanvasProps) {
         )}
 
         {/* Node drag preview — floating bubble that follows cursor */}
-        {draggingNodeType && dragMousePos && (
+        {draggingNodeType && (
           <div
+            ref={dragPreviewRef}
             className="node-drag-preview"
             style={{
-              left: dragMousePos.x - 32,
-              top: dragMousePos.y - 32,
+              position: 'fixed',
+              left: 0,
+              top: 0,
+              transform: `translate(-1000px, -1000px)`,
+              pointerEvents: 'none',
+              zIndex: 9999,
               color: NODE_COLORS[draggingNodeType] || "#476083",
             }}
           >
@@ -431,6 +551,7 @@ function CanvasInner({ workspaceId }: CanvasProps) {
               {draggingNodeType === "article" && <ArticleIconComponent size={28} />}
               {draggingNodeType === "image" && <ImageIconComponent size={28} />}
               {draggingNodeType === "flashcard" && <FlashcardIcon size={28} />}
+              {draggingNodeType === "text" && <TextIconComponent size={28} />}
             </div>
           </div>
         )}
