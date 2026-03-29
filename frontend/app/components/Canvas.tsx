@@ -73,6 +73,59 @@ const nodeTypes: NodeTypes = {
   flashcard: FlashcardNode as any,
 };
 
+const edgeTypes: EdgeTypes = {
+  river: RiverEdge,
+};
+
+/* ── Wavy connection line preview ── */
+function WavyConnectionLine({ sourceX, sourceY, targetX, targetY }: {
+  sourceX: number; sourceY: number; targetX: number; targetY: number;
+}) {
+  const dx = targetX - sourceX;
+  const dy = targetY - sourceY;
+  const len = Math.sqrt(dx * dx + dy * dy);
+  const ux = len > 0 ? dx / len : 0;
+  const uy = len > 0 ? dy / len : 0;
+  const nx = -uy;
+  const ny = ux;
+  const segments = 48;
+
+  const layers = [
+    { amplitude: 8, phase: 0, color: "#00BFFF", opacity: 0.6, width: 2 },
+    { amplitude: 5, phase: 2.1, color: "#476083", opacity: 0.3, width: 1.2 },
+  ];
+
+  return (
+    <>
+      {layers.map((layer, li) => {
+        const points: string[] = [];
+        for (let i = 0; i <= segments; i++) {
+          const t = i / segments;
+          const baseX = sourceX + dx * t;
+          const baseY = sourceY + dy * t;
+          const wave = Math.sin(t * 1.5 * Math.PI * 2 + layer.phase) * layer.amplitude;
+          const taper = Math.sin(t * Math.PI);
+          const px = baseX + nx * wave * taper;
+          const py = baseY + ny * wave * taper;
+          points.push(i === 0 ? `M ${px} ${py}` : `L ${px} ${py}`);
+        }
+        return (
+          <path
+            key={li}
+            d={points.join(" ")}
+            fill="none"
+            stroke={layer.color}
+            strokeWidth={layer.width}
+            strokeOpacity={layer.opacity}
+            strokeLinecap="round"
+            strokeDasharray="8 4"
+          />
+        );
+      })}
+    </>
+  );
+}
+
 interface CanvasProps {
   workspaceId: string;
 }
@@ -81,41 +134,73 @@ function CanvasInner({ workspaceId }: CanvasProps) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [nodes, , onNodesChange] = useNodesState<any>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
-  const { addNodes, addEdges, getNode, flowToScreenPosition } = useReactFlow();
+  const { addNodes, addEdges, getNode, setNodes, flowToScreenPosition } = useReactFlow();
 
   /* ── Connect mode state ── */
   const [connectingFrom, setConnectingFrom] = useState<string | null>(null);
+  const [cachedMessages, setCachedMessages] = useState<Message[] | null>(null);
   const [mouseScreen, setMouseScreen] = useState<{ x: number; y: number } | null>(null);
 
   /* ── Node drag preview state ── */
   const [draggingNodeType, setDraggingNodeType] = useState<NodeKind | null>(null);
   const dragPreviewRef = useRef<HTMLDivElement>(null);
 
-  function startConnect(nodeId: string) {
+  function startConnect(nodeId: string, messages?: Message[]) {
     setConnectingFrom(nodeId);
+    setCachedMessages(messages ?? null);
   }
 
   function completeConnect(targetNodeId: string) {
-    if (connectingFrom && connectingFrom !== targetNodeId) {
-      setEdges((eds) =>
-        addEdge(
-          {
-            id: `${connectingFrom}-${targetNodeId}`,
-            source: connectingFrom,
-            target: targetNodeId,
-            animated: true,
-            style: { stroke: "#00668a", strokeWidth: 1.5 },
-          },
-          eds
-        )
+    if (!connectingFrom || connectingFrom === targetNodeId) {
+      cancelConnect();
+      return;
+    }
+
+    // Connection restriction: only claude → claude
+    const targetNode = getNode(targetNodeId);
+    if (targetNode?.type !== "claude") {
+      cancelConnect();
+      return;
+    }
+
+    // Create river edge
+    setEdges((eds) =>
+      addEdge(
+        {
+          id: `${connectingFrom}-${targetNodeId}`,
+          source: connectingFrom,
+          target: targetNodeId,
+          type: "river",
+        },
+        eds
+      )
+    );
+
+    // Inject cached messages as referencedMessages into target node
+    if (cachedMessages && cachedMessages.length > 0) {
+      setNodes((nds) =>
+        nds.map((n) => {
+          if (n.id !== targetNodeId) return n;
+          const existing = (n.data as Record<string, unknown>).referencedMessages as Message[] | undefined;
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              referencedMessages: [...(existing ?? []), ...cachedMessages],
+            },
+          };
+        })
       );
     }
+
     setConnectingFrom(null);
+    setCachedMessages(null);
     setMouseScreen(null);
   }
 
   function cancelConnect() {
     setConnectingFrom(null);
+    setCachedMessages(null);
     setMouseScreen(null);
   }
 
@@ -246,8 +331,7 @@ function CanvasInner({ workspaceId }: CanvasProps) {
       id: `${parentId}-${branchId}`,
       source: parentId,
       target: branchId,
-      animated: true,
-      style: { stroke: "#00668a", strokeWidth: 1.5 },
+      type: "river",
     });
   }
 
@@ -274,7 +358,7 @@ function CanvasInner({ workspaceId }: CanvasProps) {
   const sourcePos = connectingFrom ? getSourceScreenPos() : null;
 
   return (
-    <ConnectContext.Provider value={{ connectingFrom, startConnect }}>
+    <ConnectContext.Provider value={{ connectingFrom, cachedMessages, startConnect }}>
       <div
         className="w-full h-full relative overflow-hidden"
         style={{
@@ -338,6 +422,7 @@ function CanvasInner({ workspaceId }: CanvasProps) {
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
             nodeTypes={nodeTypes}
+            edgeTypes={edgeTypes}
             onNodeClick={(_event: React.MouseEvent, node: Node) => {
               if (connectingFrom) {
                 completeConnect(node.id);
@@ -367,21 +452,17 @@ function CanvasInner({ workspaceId }: CanvasProps) {
           </ReactFlow>
         </div>
 
-        {/* Connection line overlay — follows cursor from source node */}
+        {/* Connection line overlay — wavy river preview */}
         {connectingFrom && mouseScreen && sourcePos && (
           <svg
             className="fixed inset-0 w-screen h-screen pointer-events-none"
             style={{ zIndex: 9999 }}
           >
-            <line
-              x1={sourcePos.x}
-              y1={sourcePos.y}
-              x2={mouseScreen.x}
-              y2={mouseScreen.y}
-              stroke="#00BFFF"
-              strokeWidth={2}
-              strokeDasharray="8 4"
-              opacity={0.8}
+            <WavyConnectionLine
+              sourceX={sourcePos.x}
+              sourceY={sourcePos.y}
+              targetX={mouseScreen.x}
+              targetY={mouseScreen.y}
             />
             <circle
               cx={mouseScreen.x}

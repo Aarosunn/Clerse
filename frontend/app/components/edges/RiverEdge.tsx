@@ -70,14 +70,12 @@ const RIVER_LAYERS = [
 ];
 
 function RiverEdge({
-  id,
   sourceX,
   sourceY,
   targetX,
   targetY,
   sourcePosition,
   targetPosition,
-  style,
 }: EdgeProps) {
   // Get the standard bezier midpoints for the invisible interaction path
   const [edgePath] = getBezierPath({
