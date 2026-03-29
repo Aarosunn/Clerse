@@ -1,6 +1,6 @@
-\"use client\";
+"use client";
 
-import { useReactFlow } from \"@xyflow/react\";
+import { useReactFlow } from "@xyflow/react";
 
 interface WindowControlsProps {
   nodeId: string;
