@@ -29,3 +29,17 @@ async def get_workspace(workspace_id: uuid.UUID, db: AsyncSession = Depends(get_
     if workspace is None:
         raise HTTPException(status_code=404, detail="Workspace not found")
     return workspace
+
+
+@router.put("/{workspace_id}", response_model=WorkspaceUpdatedResponse)
+async def update_workspace(
+    workspace_id: uuid.UUID,
+    body: WorkspaceUpdate,
+    db: AsyncSession = Depends(get_db),
+):
+    workspace = await workspace_service.update_workspace(
+        workspace_id, body.canvas_state, body.title, db
+    )
+    if workspace is None:
+        raise HTTPException(status_code=404, detail="Workspace not found")
+    return workspace

@@ -33,3 +33,45 @@ async def test_get_workspace(client):
 async def test_get_workspace_not_found(client):
     response = await client.get(f"/api/workspaces/{uuid.uuid4()}")
     assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_update_workspace_title(client):
+    create_resp = await client.post("/api/workspaces", json={"title": "Old Title"})
+    workspace_id = create_resp.json()["id"]
+
+    response = await client.put(
+        f"/api/workspaces/{workspace_id}", json={"title": "New Title"}
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == workspace_id
+    assert data["title"] == "New Title"
+    assert "updated_at" in data
+
+
+@pytest.mark.asyncio
+async def test_update_workspace_canvas_state(client):
+    create_resp = await client.post("/api/workspaces", json={"title": "Canvas Test"})
+    workspace_id = create_resp.json()["id"]
+
+    canvas_state = {
+        "nodes": [{"id": "n1", "type": "chat", "position": {"x": 0, "y": 0}, "data": {}}],
+        "edges": [],
+        "viewport": {"x": 0, "y": 0, "zoom": 1},
+    }
+    response = await client.put(
+        f"/api/workspaces/{workspace_id}", json={"canvas_state": canvas_state}
+    )
+    assert response.status_code == 200
+
+    get_resp = await client.get(f"/api/workspaces/{workspace_id}")
+    assert get_resp.json()["canvas_state"] == canvas_state
+
+
+@pytest.mark.asyncio
+async def test_update_workspace_not_found(client):
+    response = await client.put(
+        f"/api/workspaces/{uuid.uuid4()}", json={"title": "X"}
+    )
+    assert response.status_code == 404
