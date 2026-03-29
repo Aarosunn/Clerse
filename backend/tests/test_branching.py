@@ -4,7 +4,7 @@ import pytest
 import pytest_asyncio
 from sqlalchemy import select
 from app.schemas.clerse import BranchCreateRequest, BranchCreateResponse
-from app.models.clerse import Branch, Message, Workspace
+from app.models.clerse import Branch, Message
 from app.services.workspaces import create_branch, InvalidSourceMessageError
 
 
@@ -32,15 +32,6 @@ def test_branch_create_response_schema():
     assert resp.parent_node_id == "node-abc"
     assert resp.child_node_id == "node-xyz"
     assert resp.source_message_ids == [msg_id]
-
-
-@pytest_asyncio.fixture
-async def workspace(db):
-    ws = Workspace(title="Branch Test Workspace")
-    db.add(ws)
-    await db.commit()
-    await db.refresh(ws)
-    return ws
 
 
 @pytest_asyncio.fixture
