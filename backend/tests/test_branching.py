@@ -13,11 +13,9 @@ def test_branch_create_request_schema():
     msg_id_2 = uuid.uuid4()
     req = BranchCreateRequest(
         source_message_ids=[msg_id_1, msg_id_2],
-        title="Deep dive into CNNs",
         child_node_id="node-xyz",
     )
     assert len(req.source_message_ids) == 2
-    assert req.title == "Deep dive into CNNs"
     assert req.child_node_id == "node-xyz"
 
 
@@ -137,7 +135,6 @@ async def test_branch_endpoint_success(client, workspace, messages):
         f"/api/workspaces/{workspace.id}/nodes/node-parent/branch",
         json={
             "source_message_ids": [str(messages[0].id), str(messages[1].id)],
-            "title": "Deep dive",
             "child_node_id": "node-child-123",
         },
     )
@@ -155,7 +152,6 @@ async def test_branch_endpoint_empty_source_ids(client, workspace):
         f"/api/workspaces/{workspace.id}/nodes/node-parent/branch",
         json={
             "source_message_ids": [],
-            "title": "Fresh branch",
             "child_node_id": "node-fresh",
         },
     )
@@ -170,7 +166,6 @@ async def test_branch_endpoint_workspace_not_found(client):
         f"/api/workspaces/{uuid.uuid4()}/nodes/node-parent/branch",
         json={
             "source_message_ids": [],
-            "title": "Test",
             "child_node_id": "node-child",
         },
     )
@@ -184,7 +179,6 @@ async def test_branch_endpoint_invalid_message_ids(client, workspace):
         f"/api/workspaces/{workspace.id}/nodes/node-parent/branch",
         json={
             "source_message_ids": [str(uuid.uuid4())],
-            "title": "Test",
             "child_node_id": "node-child",
         },
     )

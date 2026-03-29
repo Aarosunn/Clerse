@@ -99,7 +99,6 @@ class FileUploadResponse(BaseModel):
 
 class BranchCreateRequest(BaseModel):
     source_message_ids: list[uuid.UUID]
-    title: str
     child_node_id: str
 
 
