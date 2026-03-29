@@ -1,4 +1,5 @@
 # tests/test_file_upload.py
+import io
 import uuid
 import pytest
 import base64
@@ -61,9 +62,6 @@ async def test_upload_file_persisted_to_db(db, workspace):
     assert records[0].filename == "photo.jpg"
 
 
-import io
-import uuid as uuid_module
-
 MAX_SIZE = 10 * 1024 * 1024  # 10MB
 
 
@@ -107,7 +105,7 @@ async def test_upload_endpoint_rejects_oversized_file(client, workspace):
 @pytest.mark.asyncio
 async def test_upload_endpoint_workspace_not_found(client):
     response = await client.post(
-        f"/api/workspaces/{uuid_module.uuid4()}/files",
+        f"/api/workspaces/{uuid.uuid4()}/files",
         data={"node_id": "node-abc"},
         files={"file": ("test.png", io.BytesIO(b"\x89PNG"), "image/png")},
     )

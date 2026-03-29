@@ -1,7 +1,7 @@
 # app/routers/files.py
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, Form
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -19,7 +19,7 @@ _MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 async def upload_file(
     workspace_id: uuid.UUID,
     node_id: str = Form(...),
-    file: UploadFile = ...,
+    file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
 ):
     workspace = await workspace_service.get_workspace(workspace_id, db)
