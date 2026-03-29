@@ -28,7 +28,7 @@ export default function PDFNode({ id, data: rawData }: NodeProps<any>) {
   const [minimized, setMinimized] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const { addNodes, addEdges, getNode } = useReactFlow();
-  const { startConnect: startConnectMode } = useConnectMode();
+  const { startConnect: startConnectMode, workspaceId } = useConnectMode();
 
   function handleConnect() {
     if (!extracted) return;
@@ -44,11 +44,15 @@ export default function PDFNode({ id, data: rawData }: NodeProps<any>) {
     setFileName(file.name);
     const form = new FormData();
     form.append("file", file);
+    form.append("workspace_id", workspaceId);
+    form.append("node_id", id);
     try {
       const res = await fetch(`${BACKEND}/api/extract/pdf`, { method: "POST", body: form });
       const json = await res.json();
-      setExtracted(json.text ?? "");
-      setPageCount(json.page_count ?? 0);
+      const pages: { page: number; text: string }[] = json.pages ?? [];
+      setExtracted(pages.map((p) => p.text).join("\n\n"));
+      setPageCount(pages.length);
+      if (json.filename) setFileName(json.filename);
     } catch {
       setExtracted("Could not extract PDF — check backend connection.");
     }

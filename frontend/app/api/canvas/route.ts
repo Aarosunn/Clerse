@@ -2,20 +2,22 @@ import { NextRequest, NextResponse } from "next/server";
 
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const id = req.nextUrl.searchParams.get("id");
+  if (!id) return NextResponse.json(null, { status: 400 });
   try {
-    const res = await fetch(`${BACKEND}/api/canvas`, { cache: "no-store" });
-    if (!res.ok) return NextResponse.json([]);
+    const res = await fetch(`${BACKEND}/api/workspaces/${id}`, { cache: "no-store" });
+    if (!res.ok) return NextResponse.json(null, { status: res.status });
     return NextResponse.json(await res.json());
   } catch {
-    return NextResponse.json([]);
+    return NextResponse.json(null, { status: 502 });
   }
 }
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
   try {
-    const res = await fetch(`${BACKEND}/api/canvas`, {
+    const res = await fetch(`${BACKEND}/api/workspaces`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -26,7 +28,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         id: crypto.randomUUID(),
-        name: body.name ?? "New Workspace",
+        title: body.title ?? "New Workspace",
         updated_at: new Date().toISOString(),
       },
       { status: 201 }

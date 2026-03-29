@@ -106,7 +106,9 @@ async def assemble_context(
             continue
         node_type = linked_node.get("type", "")
 
-        if node_type == "chat":
+        if node_type == "chat" or not linked_node:
+            # Also handles stale canvas_state: if node isn't in canvas yet (debounced
+            # save hasn't fired), try fetching messages from DB anyway.
             msgs = await get_node_messages(workspace_id, linked_id, db)
             linked_messages.extend(msgs)
 

@@ -19,7 +19,7 @@ export default function YouTubeNode({ id, data: rawData }: NodeProps<any>) {
   const [loading, setLoading] = useState(false);
   const [minimized, setMinimized] = useState(false);
   const { addNodes, addEdges, getNode } = useReactFlow();
-  const { startConnect: startConnectMode } = useConnectMode();
+  const { startConnect: startConnectMode, workspaceId } = useConnectMode();
 
   function handleConnect() {
     if (!transcript) return;
@@ -37,7 +37,7 @@ export default function YouTubeNode({ id, data: rawData }: NodeProps<any>) {
       const res = await fetch(`${BACKEND}/api/extract/youtube`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ url, workspace_id: workspaceId, node_id: id }),
       });
       const json = await res.json();
       setTranscript(json.transcript ?? "");

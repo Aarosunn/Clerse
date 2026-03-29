@@ -80,7 +80,7 @@ export default function LandingPage() {
       const res = await fetch("/api/canvas", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: "New Workspace" }),
+        body: JSON.stringify({ title: "New Workspace" }),
       });
       const workspace = await res.json();
       router.push(`/canvas/${workspace.id}`);

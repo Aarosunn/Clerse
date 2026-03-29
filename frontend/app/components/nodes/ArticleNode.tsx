@@ -20,7 +20,7 @@ export default function ArticleNode({ id, data: rawData }: NodeProps<any>) {
   const [minimized, setMinimized] = useState(false);
   const ACCENT = "#4a7c59";
   const { addNodes, addEdges, getNode } = useReactFlow();
-  const { startConnect: startConnectMode } = useConnectMode();
+  const { startConnect: startConnectMode, workspaceId } = useConnectMode();
 
   function handleConnect() {
     if (!content) return;
@@ -38,10 +38,10 @@ export default function ArticleNode({ id, data: rawData }: NodeProps<any>) {
       const res = await fetch(`${BACKEND}/api/extract/article`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ url, workspace_id: workspaceId, node_id: id }),
       });
       const json = await res.json();
-      setContent(json.content ?? "");
+      setContent(json.text ?? "");
       setTitle(json.title ?? url);
     } catch {
       setContent("Could not extract article — check backend.");

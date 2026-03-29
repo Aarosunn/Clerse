@@ -8,7 +8,7 @@ from typing import AsyncGenerator, Any
 import anthropic
 
 from app.core.config import settings
-from app.models.clerse import Message
+from app.models.clerse import Message, Workspace
 from app.services.context import assemble_context
 from app.services.tool_execution import execute_tool
 from app.services.tools import TOOL_DEFINITIONS
@@ -29,6 +29,12 @@ async def stream_chat(
     model: str,
     db: AsyncSession,
 ) -> AsyncGenerator[str, None]:
+    # 0. Ensure workspace exists (frontend may create UUID client-side before DB record exists)
+    existing = await db.get(Workspace, workspace_id)
+    if existing is None:
+        db.add(Workspace(id=workspace_id, title="New Workspace"))
+        await db.commit()
+
     # 1. Save user message
     user_msg = Message(
         workspace_id=workspace_id,

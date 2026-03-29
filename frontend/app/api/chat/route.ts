@@ -1,23 +1,20 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest } from "next/server";
-import { Message } from "@/types/messages";
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
 
 export async function POST(req: NextRequest) {
-  const {
-    messages,
-    model = "claude-sonnet-4-6",
-    system,
-  }: { messages: Message[]; model?: string; system?: string } =
-    await req.json();
-
-  const stream = client.messages.stream({
-    model,
-    max_tokens: 4096,
-    ...(system ? { system } : {}),
-    messages,
+  const body = await req.json();
+  const res = await fetch(`${BACKEND}/api/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
   });
-
-  return new Response(stream.toReadableStream());
+  return new Response(res.body, {
+    status: res.status,
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      "X-Accel-Buffering": "no",
+    },
+  });
 }
