@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Handle, Position, NodeProps, useReactFlow, NodeResizer, Node, Edge } from "@xyflow/react";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
@@ -45,6 +46,7 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
   const [pendingSuggestion, setPendingSuggestion] = useState<PendingSuggestion | null>(null);
   const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set());
   const [minimized, setMinimized] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   /* ── Referenced messages from connected nodes ── */
   const [referencedMessages, setReferencedMessages] = useState<Message[]>(
@@ -56,6 +58,16 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
       setReferencedMessages(data.referencedMessages);
     }
   }, [data.referencedMessages]);
+
+  /* ── Escape key exits fullscreen ── */
+  useEffect(() => {
+    if (!isFullscreen) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setIsFullscreen(false);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isFullscreen]);
 
   const { startConnect: startConnectMode, workspaceId, spawnNode } = useConnectMode();
 
@@ -270,21 +282,17 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
     setPendingSuggestion(null);
   }
 
-  return (
-    /* CHAT_NODE_DESIGN.md §1 — Node Container */
+  /* ── Shared inner UI ── */
+  const chatUI = (
     <div
-      className="bg-surface-container-lowest rounded-xl flex flex-col animate-fade-scale overflow-hidden"
+      className="bg-surface-container-lowest flex flex-col overflow-hidden"
       style={{
         width: "100%",
-        minHeight: minimized ? 48 : 320,
-        height: minimized ? 'auto' : "100%",
-        border: "1px solid rgba(188,200,209,0.10)",
-        boxShadow: "0 12px 40px rgba(28,28,25,0.06)",
+        height: "100%",
+        borderRadius: isFullscreen ? "1rem" : undefined,
+        boxShadow: isFullscreen ? "0 24px 80px rgba(28,28,25,0.18)" : undefined,
       }}
     >
-      {!minimized && <NodeResizer minWidth={480} minHeight={260} color="#476083" />}
-      <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
-
       {/* ── Header §2 ── */}
       <div
         className="flex items-center justify-between px-4 py-2.5 shrink-0"
@@ -295,7 +303,13 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
       >
         {/* Left: macOS dots + title */}
         <div className="flex items-center gap-3">
-          <WindowControls nodeId={id} minimized={minimized} onToggleMinimize={handleMinimizeToggle} />
+          <WindowControls
+            nodeId={id}
+            minimized={minimized}
+            onToggleMinimize={handleMinimizeToggle}
+            isFullscreen={isFullscreen}
+            onToggleFullscreen={() => setIsFullscreen((v) => !v)}
+          />
           <span
             className="font-headline font-bold text-primary"
             style={{ fontSize: 13 }}
@@ -312,12 +326,11 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
           )}
         </div>
 
-        {/* Right: model tag + selecting badge + branch action (hide when minimized) */}
+        {/* Right: model tag + selecting badge + branch action */}
         {!minimized && (
           <div className="flex items-center gap-2 flex-wrap justify-end">
             <ModelSelector value={model} onChange={setModel} />
 
-            {/* CHAT_NODE_DESIGN.md §2 — Selecting button (always visible) */}
             <button
               onClick={() => {
                 setIsSelecting((v) => !v);
@@ -336,7 +349,6 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
               Selecting
             </button>
 
-            {/* Branch button — starts river connection line */}
             <button
               onClick={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
@@ -362,7 +374,6 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
               Branch
             </button>
 
-            {/* Create Branch button — instantly spawns a new node (only when selecting) */}
             {isSelecting && selectedIndices.size > 0 && (
               <button
                 onClick={branchFromSelection}
@@ -385,13 +396,15 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
 
       {/* ── Message area §3 ── */}
       {!minimized && <div
-        className="flex-1 overflow-y-auto"
+        className="overflow-y-auto"
         style={{
           padding: "24px 32px",
           background: "rgba(252,249,244,0.5)",
+          flex: "1 1 0",
+          minHeight: 180,
+          maxHeight: isFullscreen ? undefined : "calc(100% - 130px)",
         }}
       >
-        {/* Referenced context from connected nodes */}
         {referencedMessages.length > 0 && (
           <div
             className="mb-4 rounded-lg overflow-hidden"
@@ -515,10 +528,8 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
               key={i}
               className={`relative flex ${msg.role === "user" ? "flex-col items-end" : "items-start gap-3"}`}
             >
-              {/* ── User message §3A ── */}
               {msg.role === "user" && (
                 <>
-                  {/* Selection checkbox — CRITICAL per spec */}
                   {isSelecting && (
                     <button
                       onClick={() => toggleSelect(i)}
@@ -547,13 +558,9 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
                 </>
               )}
 
-              {/* ── AI message §3B ── */}
               {msg.role === "assistant" && (
                 <>
-                  {/* Avatar */}
-                  <div
-                    className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0 mt-0.5"
-                  >
+                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0 mt-0.5">
                     <SparkleIcon size={14} className="text-white" />
                   </div>
 
@@ -567,7 +574,6 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
                       </ReactMarkdown>
                     </div>
 
-                    {/* §3C — Action bar */}
                     <div className="flex items-center gap-3 mt-3">
                       <button
                         onClick={() => navigator.clipboard.writeText(getTextContent(msg.content))}
@@ -602,7 +608,6 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
                     </div>
                   </div>
 
-                  {/* Selection checkbox — right side for AI messages */}
                   {isSelecting && (
                     <button
                       onClick={() => toggleSelect(i)}
@@ -624,7 +629,6 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
             </div>
           ))}
 
-          {/* Streaming in progress */}
           {streaming && streamText && (
             <div className="flex items-start gap-3">
               <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0 mt-0.5">
@@ -645,7 +649,6 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
             </div>
           )}
 
-          {/* Thinking dots */}
           {streaming && !streamText && (
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
@@ -678,9 +681,7 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
           padding: "12px 16px 10px",
         }}
       >
-        {/* Textarea row */}
         <div className="relative flex items-center">
-          {/* Left utilities */}
           <div className="absolute left-3 flex items-center gap-1.5 z-10">
             <button className="text-on-surface-variant/40 hover:text-primary transition-colors">
               <AddCircleIcon size={16} />
@@ -690,7 +691,6 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
             </button>
           </div>
 
-          {/* Textarea */}
           <textarea
             ref={textareaRef}
             value={input}
@@ -721,7 +721,6 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
             }}
           />
 
-          {/* Submit button — inside textarea right */}
           <button
             onClick={sendMessage}
             disabled={streaming || !input.trim()}
@@ -732,7 +731,6 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
           </button>
         </div>
 
-        {/* Helper tags */}
         <div className="flex items-center gap-2 mt-2">
           <button
             className="flex items-center gap-1 px-2 py-0.5 rounded-full font-label uppercase tracking-widest text-on-surface-variant/50 hover:text-primary transition-colors"
@@ -756,8 +754,127 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
           </span>
         </div>
       </div>}
-
-      <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} />
     </div>
   );
+
+  return (
+    /* CHAT_NODE_DESIGN.md §1 — Node Container */
+    <>
+      <div
+        className="bg-surface-container-lowest rounded-xl flex flex-col animate-fade-scale overflow-hidden relative"
+        style={{
+          width: "100%",
+          minHeight: minimized ? 48 : 320,
+          height: minimized ? "auto" : "100%",
+          border: "1px solid rgba(188,200,209,0.10)",
+          boxShadow: "0 12px 40px rgba(28,28,25,0.06)",
+        }}
+      >
+        {!minimized && !isFullscreen && (
+          <NodeResizer
+            minWidth={480}
+            minHeight={260}
+            lineStyle={{ stroke: "rgba(71,96,131,0.3)", strokeWidth: 1 }}
+            handleStyle={{
+              width: 8,
+              height: 8,
+              borderRadius: 4,
+              background: "#476083",
+              border: "none",
+              opacity: 0.5,
+            }}
+          />
+        )}
+        {/* ── Resize grip texture ── */}
+        {!minimized && !isFullscreen && (
+          <div
+            aria-hidden
+            style={{
+              position: "absolute",
+              bottom: 6,
+              right: 6,
+              width: 16,
+              height: 16,
+              pointerEvents: "none",
+              zIndex: 10,
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              {[4,8,12].map(x =>
+                [4,8,12].filter(y => x + y >= 12).map(y => (
+                  <circle key={`${x}-${y}`} cx={x} cy={y} r={1.2} fill="rgba(71,96,131,0.40)" />
+                ))
+              )}
+            </svg>
+          </div>
+        )}
+        <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
+
+        {/* When fullscreen, show a minimal placeholder card on the canvas */}
+        {isFullscreen ? (
+          <div
+            className="flex items-center gap-3 px-4 py-2.5"
+            style={{
+              background: "rgba(71,96,131,0.04)",
+              borderBottom: "1px solid rgba(188,200,209,0.15)",
+            }}
+          >
+            <WindowControls
+              nodeId={id}
+              minimized={minimized}
+              onToggleMinimize={handleMinimizeToggle}
+              isFullscreen={isFullscreen}
+              onToggleFullscreen={() => setIsFullscreen(false)}
+            />
+            <span className="font-headline font-bold text-primary" style={{ fontSize: 13 }}>
+              Intelligence Stream
+            </span>
+            <span
+              className="font-label uppercase tracking-widest text-secondary/50 ml-2"
+              style={{ fontSize: 9 }}
+            >
+              · Fullscreen
+            </span>
+          </div>
+        ) : chatUI}
+
+        <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} />
+      </div>
+
+      {/* ── Fullscreen portal overlay ── */}
+      {isFullscreen && typeof document !== "undefined" && createPortal(
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "rgba(28,28,25,0.55)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+          }}
+          onClick={(e) => { if (e.target === e.currentTarget) setIsFullscreen(false); }}
+        >
+          <div
+            style={{
+              position: "absolute",
+              inset: 24,
+              borderRadius: "1.25rem",
+              overflow: "hidden",
+              display: "flex",
+              flexDirection: "column",
+              boxShadow: "0 32px 100px rgba(28,28,25,0.30)",
+              border: "1px solid rgba(188,200,209,0.18)",
+            }}
+          >
+            {chatUI}
+          </div>
+        </div>,
+        document.body
+      )}
+    </>
+  );
 }
+

@@ -1,15 +1,23 @@
-"use client";
+\"use client\";
 
-import { useReactFlow } from "@xyflow/react";
+import { useReactFlow } from \"@xyflow/react\";
 
 interface WindowControlsProps {
   nodeId: string;
   minimized: boolean;
   onToggleMinimize: () => void;
+  isFullscreen: boolean;
+  onToggleFullscreen: () => void;
 }
 
-export default function WindowControls({ nodeId, minimized, onToggleMinimize }: WindowControlsProps) {
-  const { deleteElements, setNodes, getNode } = useReactFlow();
+export default function WindowControls({
+  nodeId,
+  minimized,
+  onToggleMinimize,
+  isFullscreen,
+  onToggleFullscreen,
+}: WindowControlsProps) {
+  const { deleteElements } = useReactFlow();
 
   function handleClose(e: React.MouseEvent) {
     e.stopPropagation();
@@ -21,17 +29,9 @@ export default function WindowControls({ nodeId, minimized, onToggleMinimize }: 
     onToggleMinimize();
   }
 
-  function handleEnlarge(e: React.MouseEvent) {
+  function handleFullscreen(e: React.MouseEvent) {
     e.stopPropagation();
-    const node = getNode(nodeId);
-    if (!node) return;
-    const currentW = (node.style?.width as number) ?? 340;
-    const newW = currentW > 500 ? Math.round(currentW / 1.5) : Math.round(currentW * 1.5);
-    setNodes((nds) =>
-      nds.map((n) =>
-        n.id === nodeId ? { ...n, style: { ...n.style, width: newW } } : n
-      )
-    );
+    onToggleFullscreen();
   }
 
   return (
@@ -49,10 +49,10 @@ export default function WindowControls({ nodeId, minimized, onToggleMinimize }: 
         title={minimized ? "Expand" : "Minimize"}
       />
       <button
-        onClick={handleEnlarge}
+        onClick={handleFullscreen}
         className="w-3 h-3 rounded-full transition-all active:scale-90 hover:brightness-90"
         style={{ background: "#27c93f" }}
-        title="Enlarge"
+        title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
       />
     </div>
   );
