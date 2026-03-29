@@ -80,33 +80,37 @@ const edgeTypes: EdgeTypes = {
 };
 
 /* ── Wavy connection line preview ── */
+/* Mirrors RiverEdge: same amplitude, frequency, noise, color, and glow */
 function WavyConnectionLine({ sourceX, sourceY, targetX, targetY }: {
   sourceX: number; sourceY: number; targetX: number; targetY: number;
 }) {
   const dx = targetX - sourceX;
   const dy = targetY - sourceY;
   const len = Math.sqrt(dx * dx + dy * dy);
-  const ux = len > 0 ? dx / len : 0;
-  const uy = len > 0 ? dy / len : 0;
-  const nx = -uy;
-  const ny = ux;
+  const nx = len > 0 ? -(dy / len) : 0;
+  const ny = len > 0 ? dx / len : 0;
 
   const pathRef = useRef<SVGPathElement>(null);
 
   useEffect(() => {
     let animationFrameId: number;
-    let startTime = performance.now();
+    const startTime = performance.now();
 
     const animate = (time: number) => {
       const elapsedTime = time - startTime;
       const phase = (elapsedTime / 1000) * -1.5;
 
+      const segments = 64;
+      const amplitude = 8;
+      const frequency = 1.2;
       const points: string[] = [];
-      for (let i = 0; i <= 64; i++) {
-        const t = i / 64;
+      for (let i = 0; i <= segments; i++) {
+        const t = i / segments;
         const baseX = sourceX + dx * t;
         const baseY = sourceY + dy * t;
-        const wave = Math.sin(t * 2.5 * Math.PI * 2 + phase) * 15;
+        const waveMain = Math.sin(t * frequency * Math.PI * 2 + phase) * amplitude;
+        const waveNoise = Math.sin(t * (frequency * 2.13) * Math.PI * 2 + phase * 1.3) * (amplitude * 0.35);
+        const wave = waveMain + waveNoise;
         const taper = Math.sin(t * Math.PI);
         const px = baseX + nx * wave * taper;
         const py = baseY + ny * wave * taper;
@@ -129,12 +133,12 @@ function WavyConnectionLine({ sourceX, sourceY, targetX, targetY }: {
     <path
       ref={pathRef}
       fill="none"
-      stroke="#00BFFF"
+      stroke="#739AB5"
       strokeWidth={6}
-      strokeOpacity={0.8}
+      strokeOpacity={0.6}
       strokeLinecap="round"
       style={{
-        filter: "drop-shadow(0 0 4px rgba(0,191,255,0.7))",
+        filter: "drop-shadow(0 0 4px rgba(115,154,181,0.5))",
       }}
     />
   );
@@ -487,7 +491,7 @@ function CanvasInner({ workspaceId }: CanvasProps) {
               cy={mouseScreen.y}
               r={6}
               fill="none"
-              stroke="#00BFFF"
+              stroke="#739AB5"
               strokeWidth={1.5}
               opacity={0.6}
             />
