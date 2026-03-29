@@ -1,6 +1,4 @@
 # app/routers/chat.py
-import uuid
-
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
