@@ -129,3 +129,63 @@ async def test_create_branch_empty_source_ids(db, workspace):
     )
     assert branch.id is not None
     assert branch.source_message_ids == []
+
+
+@pytest.mark.asyncio
+async def test_branch_endpoint_success(client, workspace, messages):
+    response = await client.post(
+        f"/api/workspaces/{workspace.id}/nodes/node-parent/branch",
+        json={
+            "source_message_ids": [str(messages[0].id), str(messages[1].id)],
+            "title": "Deep dive",
+            "child_node_id": "node-child-123",
+        },
+    )
+    assert response.status_code == 201
+    data = response.json()
+    assert "branch_id" in data
+    assert data["parent_node_id"] == "node-parent"
+    assert data["child_node_id"] == "node-child-123"
+    assert len(data["source_message_ids"]) == 2
+
+
+@pytest.mark.asyncio
+async def test_branch_endpoint_empty_source_ids(client, workspace):
+    response = await client.post(
+        f"/api/workspaces/{workspace.id}/nodes/node-parent/branch",
+        json={
+            "source_message_ids": [],
+            "title": "Fresh branch",
+            "child_node_id": "node-fresh",
+        },
+    )
+    assert response.status_code == 201
+    data = response.json()
+    assert data["source_message_ids"] == []
+
+
+@pytest.mark.asyncio
+async def test_branch_endpoint_workspace_not_found(client):
+    response = await client.post(
+        f"/api/workspaces/{uuid.uuid4()}/nodes/node-parent/branch",
+        json={
+            "source_message_ids": [],
+            "title": "Test",
+            "child_node_id": "node-child",
+        },
+    )
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_branch_endpoint_invalid_message_ids(client, workspace):
+    """Non-existent source_message_id returns 422."""
+    response = await client.post(
+        f"/api/workspaces/{workspace.id}/nodes/node-parent/branch",
+        json={
+            "source_message_ids": [str(uuid.uuid4())],
+            "title": "Test",
+            "child_node_id": "node-child",
+        },
+    )
+    assert response.status_code == 422

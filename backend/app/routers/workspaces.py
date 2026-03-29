@@ -6,6 +6,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.schemas.clerse import (
+    BranchCreateRequest,
+    BranchCreateResponse,
     MessageResponse,
     WorkspaceCreate,
     WorkspaceCreatedResponse,
@@ -13,6 +15,7 @@ from app.schemas.clerse import (
     WorkspaceUpdate,
     WorkspaceUpdatedResponse,
 )
+from app.services.workspaces import InvalidSourceMessageError
 from app.services import workspaces as workspace_service
 
 router = APIRouter(prefix="/api/workspaces", tags=["workspaces"])
@@ -64,3 +67,37 @@ async def get_node_messages(
         raise HTTPException(status_code=404, detail="Workspace not found")
     messages = await workspace_service.get_node_messages(workspace_id, node_id, db)
     return messages
+
+
+@router.post(
+    "/{workspace_id}/nodes/{node_id}/branch",
+    status_code=201,
+    response_model=BranchCreateResponse,
+)
+async def create_branch(
+    workspace_id: uuid.UUID,
+    node_id: str,
+    body: BranchCreateRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    workspace = await workspace_service.get_workspace(workspace_id, db)
+    if workspace is None:
+        raise HTTPException(status_code=404, detail="Workspace not found")
+
+    try:
+        branch = await workspace_service.create_branch(
+            workspace_id=workspace_id,
+            parent_node_id=node_id,
+            child_node_id=body.child_node_id,
+            source_message_ids=body.source_message_ids,
+            db=db,
+        )
+    except InvalidSourceMessageError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
+    return BranchCreateResponse(
+        branch_id=branch.id,
+        parent_node_id=branch.parent_node_id,
+        child_node_id=branch.child_node_id,
+        source_message_ids=[uuid.UUID(mid) for mid in (branch.source_message_ids or [])],
+    )
