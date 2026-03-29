@@ -20,10 +20,10 @@ Infinite canvas where Claude conversations are spatial nodes. Users branch off a
 ```
 Frontend     Next.js + React Flow (TypeScript/TSX)
 Backend      FastAPI (Python) on Railway
-Database     Neon (serverless Postgres)
+Database     Neon (serverless Postgres) via SQLAlchemy 2.0 async ORM + Alembic migrations
 Multiplayer  Liveblocks
-AI           Anthropic API directly (claude-sonnet-4-6 default)
-PDF          react-pdf (viewer) + pymupdf (backend extraction)
+AI           Anthropic API via Python backend (claude-sonnet-4-6 default)
+PDF          react-pdf (viewer) + @react-pdf/renderer (export) + pymupdf (backend extraction)
 Deploy       Vercel (frontend) + Railway (backend)
 ```
 
@@ -37,12 +37,6 @@ clerse/
 │   ├── app/
 │   │   ├── page.tsx
 │   │   ├── api/
-│   │   │   ├── canvas/route.ts
-│   │   │   ├── chat/route.ts              # Anthropic API proxy + streaming
-│   │   │   ├── extract/
-│   │   │   │   ├── pdf/route.ts
-│   │   │   │   ├── youtube/route.ts
-│   │   │   │   └── article/route.ts
 │   │   │   └── liveblocks-auth/route.ts
 │   │   └── components/
 │   │       ├── Canvas.tsx
@@ -52,14 +46,16 @@ clerse/
 │   │       │   ├── YouTubeNode.tsx
 │   │       │   ├── ArticleNode.tsx
 │   │       │   ├── ImageNode.tsx
+│   │       │   ├── TextNode.tsx
 │   │       │   ├── FlashcardNode.tsx
+│   │       │   ├── QuizNode.tsx
+│   │       │   ├── PDFDocNode.tsx
 │   │       │   └── BranchConnector.tsx
 │   │       ├── Toolbar.tsx
 │   │       ├── ModelSelector.tsx
 │   │       └── Presence.tsx
 │   ├── lib/
 │   │   ├── liveblocks.ts
-│   │   ├── anthropic.ts
 │   │   └── conversations.ts
 │   └── types/
 │       ├── nodes.ts
@@ -67,11 +63,25 @@ clerse/
 │
 ├── backend/
 │   ├── main.py
-│   ├── routes/
-│   │   ├── canvas.py
-│   │   └── extract.py                     # pdf, youtube, article
-│   └── db/
-│       └── neon.py
+│   ├── alembic.ini
+│   ├── alembic/
+│   │   ├── env.py
+│   │   └── versions/
+│   └── app/
+│       ├── core/                           # config, db engine/session
+│       │   ├── config.py
+│       │   └── database.py
+│       ├── middleware/                      # CORS
+│       ├── models/                          # SQLAlchemy ORM models
+│       ├── routers/                         # HTTP route handlers
+│       │   ├── canvas.py
+│       │   ├── chat.py                      # Claude API proxy + SSE streaming
+│       │   └── extract.py                   # pdf, youtube, article
+│       ├── schemas/                         # Pydantic request/response models
+│       └── services/                        # business logic (MCP-ready)
+│           ├── canvas.py
+│           ├── chat.py
+│           └── extract.py
 │
 ├── CLAUDE.md
 └── progress.md
@@ -81,19 +91,21 @@ clerse/
 
 ## AI Architecture
 
-All Claude calls go through `/api/chat` server-side. API key never touches the client.
+All Claude calls go through the Python backend `POST /chat` endpoint. API key never touches the client.
 
-```typescript
-// app/api/chat/route.ts — always stream, never response.json()
-const stream = await client.messages.stream({
-  model: model ?? 'claude-sonnet-4-6',
-  max_tokens: 4096,
-  messages,
-})
-return new Response(stream.toReadableStream())
+```python
+# app/routers/chat.py — SSE streaming via FastAPI
+@router.post("/chat")
+async def chat(request: ChatRequest):
+    async with client.messages.stream(
+        model=request.model or "claude-sonnet-4-6",
+        max_tokens=4096,
+        messages=request.messages,
+    ) as stream:
+        return StreamingResponse(stream_events(stream), media_type="text/event-stream")
 ```
 
-Each node fires its own independent fetch to `/api/chat` — parallel streaming requires no coordination. This is the core demo feature.
+Each node fires its own independent fetch to the backend `/chat` endpoint — parallel streaming requires no coordination. This is the core demo feature.
 
 **Models:** `claude-haiku-4-5` / `claude-sonnet-4-6` (default) / `claude-opus-4-6`
 
@@ -101,25 +113,43 @@ Each node fires its own independent fetch to `/api/chat` — parallel streaming 
 
 ## Node Types
 
+### Input Nodes (user uploads/provides)
 ```
-Claude node      white    conversation, branches infinitely
 PDF node         red      drag PDF → pymupdf extracts text per page
 YouTube node     blue     paste URL → youtube-transcript-api
 Web article node green    paste URL → trafilatura extracts text
 Image node       purple   drag image → base64 → Anthropic vision API
-Flashcard node   yellow   fixed system prompt → JSON cards → flippable UI
+Text node        gray     freeform text context, connects to other nodes
 ```
 
-**Flashcard system prompt — use exactly this:**
-```typescript
-const FLASHCARD_SYSTEM_PROMPT = `Generate flashcards from the provided context.
+### Output Nodes (Clerse generates)
+```
+Claude node      white    conversation, branches infinitely, Markdown + KaTeX output
+Flashcard node   yellow   system prompt → JSON [{front, back}] → flippable UI
+Quiz node        orange   system prompt → JSON [{question, options[], correct_answer, explanation}]
+PDF doc node     red      Claude generates Markdown + KaTeX, downloadable via @react-pdf/renderer
+```
+
+All output nodes can be connected to other nodes to provide additional context.
+When generating output nodes, Claude should respond with structured data only — no conversational wrapping.
+
+**Flashcard system prompt:**
+```python
+FLASHCARD_SYSTEM_PROMPT = """Generate flashcards from the provided context.
 Respond ONLY with a valid JSON array. No preamble, no markdown.
-Format: [{"front": "question", "back": "answer"}]`
+Format: [{"front": "question", "back": "answer"}]"""
 ```
 
-**Backend extraction routes:** `POST /api/extract/pdf` · `POST /api/extract/youtube` · `POST /api/extract/article`
+**Quiz system prompt:**
+```python
+QUIZ_SYSTEM_PROMPT = """Generate quiz questions from the provided context.
+Respond ONLY with a valid JSON array. No preamble, no markdown.
+Format: [{"question": "...", "options": ["A", "B", "C", "D"], "correct_answer": "A", "explanation": "..."}]"""
+```
 
-**Python deps:** `pymupdf` `youtube-transcript-api` `trafilatura`
+**Backend extraction routes:** `POST /extract/pdf` · `POST /extract/youtube` · `POST /extract/article`
+
+**Python deps:** `pymupdf` `youtube-transcript-api` `trafilatura` `anthropic`
 
 **Image nodes:** base64 encode client-side, no backend needed. Pass directly in Anthropic messages array.
 
@@ -127,7 +157,7 @@ Format: [{"front": "question", "back": "answer"}]`
 
 ## Multiplayer
 
-Private workspaces use React state only — zero Liveblocks rooms consumed. Room created only when user clicks Share.
+Liveblocks room created when user clicks Share. Share link = always joinable.
 
 ```typescript
 // Canvas.tsx
@@ -135,17 +165,20 @@ const { others } = useOthers()
 const [nodes, setNodes] = useStorage('nodes')
 ```
 
-Liveblocks auth endpoint: `POST /api/liveblocks-auth` → returns room access token. ~10 lines, see Liveblocks docs.
+Liveblocks auth endpoint: `POST /api/liveblocks-auth` (Next.js API route) → returns room access token. ~10 lines, see Liveblocks docs.
 
 ---
 
-## Database Schema (Neon)
+## Database (Neon + SQLAlchemy 2.0 Async ORM)
+
+Managed via Alembic migrations. Models in `app/models/`.
 
 ```sql
 CREATE TABLE workspaces (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT, canvas_state JSONB,
-  created_at TIMESTAMPTZ DEFAULT now()
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
 );
 CREATE TABLE conversations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -155,19 +188,27 @@ CREATE TABLE conversations (
 );
 ```
 
+## Persistence
+
+All workspaces persist to Neon by default. Debounced auto-save every 30s + save on disconnect.
+Local file storage (Browser File System API) as optional alternative — see Bonus 1.
+
+**Downloads (all client-side, no backend):**
+- Summaries/artifacts → `.md` file (raw Markdown)
+- PDF document nodes → `.pdf` via `@react-pdf/renderer`
+- Flashcards/Quiz → `.json` or `.md`
+
 ---
 
 ## Environment Variables
 
 ```bash
 # Frontend (.env.local)
-ANTHROPIC_API_KEY=
 NEXT_PUBLIC_LIVEBLOCKS_PUBLIC_KEY=
 NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
 
 # Backend (.env)
 DATABASE_URL=
-LIVEBLOCKS_SECRET_KEY=
 ANTHROPIC_API_KEY=
 ```
 
@@ -195,9 +236,10 @@ ANTHROPIC_API_KEY=
 - All files `.tsx` / `.ts` — never `.jsx` / `.js`
 - React Flow handles all canvas drag/drop — never write custom positioning logic
 - Liveblocks hooks only in `Presence.tsx` and `Canvas.tsx`
-- All Anthropic calls through `/api/chat` — never from client components
-- Always stream with `ReadableStream` + `TextDecoder` — never `response.json()` for chat
-- FastAPI handles extraction only — all other logic in Next.js API routes
+- All Anthropic calls through Python backend `/chat` — never from client components or Next.js API routes
+- Always stream with SSE + `EventSource` or `ReadableStream` — never `response.json()` for chat
+- FastAPI handles all server logic — Claude API, extraction, and DB persistence
+- Service layer pattern: `routers/` call `services/` (MCP-ready architecture)
 - No `any` types — define interfaces in `/types`
 
 ---
@@ -206,7 +248,7 @@ ANTHROPIC_API_KEY=
 
 - Use `.tsx` / `.ts` — never suggest `.jsx` or `.js`
 - Never `response.json()` for Claude responses — always stream token by token
-- Do not store conversation history in DB for private workspaces — React state is intentional
+- Do not route Claude calls through Next.js API routes — all AI calls go through the Python backend
 - Do not add authentication — hardcoded API key is correct for hackathon
 - Do not suggest Tauri, CLIProxyAPI, or any local proxy
 - Do not block parallel streaming with loading states — nodes stream independently
