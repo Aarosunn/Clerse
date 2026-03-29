@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Handle, Position, NodeProps, useReactFlow, NodeResizer } from "@xyflow/react";
+import { Handle, Position, NodeProps, useReactFlow, NodeResizer, Node, Edge } from "@xyflow/react";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
@@ -36,6 +36,12 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
 
   /* CHAT_NODE_DESIGN.md §2 — "Selecting" state */
   const [isSelecting, setIsSelecting] = useState(false);
+
+  interface PendingSuggestion {
+    title: string;
+    reason: string;
+  }
+  const [pendingSuggestion, setPendingSuggestion] = useState<PendingSuggestion | null>(null);
   const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set());
   const [minimized, setMinimized] = useState(false);
 
@@ -50,35 +56,99 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
     }
   }, [data.referencedMessages]);
 
-  const { startConnect: startConnectMode } = useConnectMode();
+  const { startConnect: startConnectMode, workspaceId, spawnNode } = useConnectMode();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const { getNode, addNodes, addEdges, setNodes } = useReactFlow();
+  const { getNode, getEdges, addNodes, addEdges, setNodes } = useReactFlow();
 
   /* ── Send message ── */
   const sendMessage = useCallback(async () => {
     if (!input.trim() || streaming) return;
 
-    const userMsg = buildUserMessage(input.trim());
-    const newMessages = [...messages, userMsg];
-    setMessages(newMessages);
+    const content = input.trim();
+    setMessages((m) => [...m, buildUserMessage(content)]);
     setInput("");
     setStreaming(true);
     setStreamText("");
 
-    // Stub response — simulates streaming without calling the backend
-    const stub = "This is a placeholder response. Connect the backend to get real Claude answers.";
-    for (let i = 0; i <= stub.length; i++) {
-      await new Promise((r) => setTimeout(r, 15));
-      setStreamText(stub.slice(0, i));
-    }
+    const edges = getEdges();
+    const connected_node_ids = edges
+      .filter((e) => e.source === id || e.target === id)
+      .map((e) => (e.source === id ? e.target : e.source));
 
-    setMessages((m) => [...m, buildAssistantMessage(stub)]);
-    setStreamText("");
-    setStreaming(false);
-    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
-  }, [input, messages, streaming]);
+    let fullText = "";
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          workspace_id: workspaceId,
+          node_id: id,
+          content,
+          model,
+          connected_node_ids,
+        }),
+      });
+
+      if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const raw = line.slice(6).trim();
+          if (!raw) continue;
+          let event: Record<string, unknown>;
+          try { event = JSON.parse(raw); } catch { continue; }
+
+          if (event.type === "token") {
+            fullText += event.text as string;
+            setStreamText(fullText);
+          } else if (event.type === "error") {
+            throw new Error((event.message as string) ?? "Backend error");
+          } else if (event.type === "tool_result") {
+            const name = event.name as string;
+            if (name === "suggest_branch") {
+              setPendingSuggestion({
+                title: event.title as string,
+                reason: event.reason as string,
+              });
+            } else if (
+              name === "create_branches" ||
+              name === "create_markdown" ||
+              name === "generate_flashcards" ||
+              name === "generate_quiz"
+            ) {
+              const toolNodes = event.nodes as Node[];
+              const toolEdges = event.edges as Edge[];
+              if (toolNodes?.length) addNodes(toolNodes);
+              if (toolEdges?.length) addEdges(toolEdges);
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Chat error:", err);
+      fullText = fullText || "Error: could not reach backend.";
+    } finally {
+      setMessages((m) => [...m, buildAssistantMessage(fullText)]);
+      setStreamText("");
+      setStreaming(false);
+      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+    }
+  }, [id, workspaceId, input, streaming, model, getEdges]);
 
   /* ── Branch from selected messages ── */
   function branchFromSelection() {
@@ -177,6 +247,20 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
       target: branchId,
       type: "river",
     });
+  }
+
+  function acceptSuggestion() {
+    if (!pendingSuggestion) return;
+    const currentNode = getNode(id);
+    const pos = currentNode?.position ?? { x: 0, y: 0 };
+    const branchId = spawnNode("claude", undefined, { x: pos.x + 460, y: pos.y + 40 });
+    addEdges({
+      id: `${id}-${branchId}`,
+      source: id,
+      target: branchId,
+      type: "river",
+    });
+    setPendingSuggestion(null);
   }
 
   return (
@@ -360,6 +444,61 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
             <p className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant">
               Start the stream
             </p>
+          </div>
+        )}
+
+        {pendingSuggestion && (
+          <div
+            className="mb-4 rounded-lg overflow-hidden"
+            style={{
+              border: "1px solid rgba(164,60,18,0.25)",
+              background: "rgba(164,60,18,0.04)",
+            }}
+          >
+            <details>
+              <summary
+                className="flex items-center gap-2 px-3 py-2 cursor-pointer select-none"
+                style={{
+                  background: "rgba(164,60,18,0.08)",
+                  borderBottom: "1px solid rgba(164,60,18,0.12)",
+                  listStyle: "none",
+                }}
+              >
+                <BranchIcon size={12} className="text-[#a43c12]" />
+                <span
+                  className="font-label uppercase tracking-widest text-[#a43c12] flex-1"
+                  style={{ fontSize: 9, fontWeight: 600 }}
+                >
+                  Branch Suggestion: {pendingSuggestion.title}
+                </span>
+              </summary>
+              <div className="px-3 py-2">
+                <p className="font-body text-xs text-on-surface/70 leading-relaxed mb-2">
+                  {pendingSuggestion.reason}
+                </p>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={acceptSuggestion}
+                    className="px-3 py-1 rounded-full font-label uppercase tracking-widest text-white transition-all"
+                    style={{ fontSize: 9, fontWeight: 600, background: "#a43c12" }}
+                  >
+                    Accept
+                  </button>
+                  <button
+                    onClick={() => setPendingSuggestion(null)}
+                    className="px-3 py-1 rounded-full font-label uppercase tracking-widest transition-all"
+                    style={{
+                      fontSize: 9,
+                      fontWeight: 600,
+                      background: "rgba(164,60,18,0.1)",
+                      color: "#a43c12",
+                    }}
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            </details>
           </div>
         )}
 
