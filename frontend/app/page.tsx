@@ -7,6 +7,7 @@ import {
   SettingsIcon,
   ArrowForwardIcon,
 } from "./components/Icons";
+import BeachWaveBackground from "./components/BeachWaveBackground";
 
 /* ── Minimal Material Symbol icons for landing page ── */
 function BookIcon({ size = 24 }: { size?: number }) {
@@ -90,56 +91,13 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-      {/* Beach Background — Sandy base + animated ocean waves from top */}
-      <div className="beach-background-container">
-        {/* Wave layer 1 — Deep water */}
-        <div className="wave-layer wave-layer-1">
-          <svg
-            className="wave-svg"
-            viewBox="0 0 2880 320"
-            preserveAspectRatio="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              fill="#476083"
-              d="M0,0L2880,0L2880,220C2832,200,2736,160,2640,145C2544,130,2448,140,2352,160C2256,180,2160,210,2064,215C1968,220,1872,195,1776,175C1680,155,1584,140,1488,150C1392,160,1296,195,1200,210C1104,225,1008,220,912,200C816,180,720,145,624,140C528,135,432,160,336,175C240,190,144,200,48,195L0,190Z"
-            />
-          </svg>
-        </div>
-
-        {/* Wave layer 2 — Mid water */}
-        <div className="wave-layer wave-layer-2">
-          <svg
-            className="wave-svg"
-            viewBox="0 0 2880 320"
-            preserveAspectRatio="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              fill="#00BFFF"
-              d="M0,0L2880,0L2880,190C2832,180,2736,155,2640,150C2544,145,2448,160,2352,180C2256,200,2160,230,2064,228C1968,226,1872,190,1776,170C1680,150,1584,145,1488,155C1392,165,1296,190,1200,200C1104,210,1008,205,912,190C816,175,720,150,624,145C528,140,432,155,336,170C240,185,144,195,48,190L0,185Z"
-            />
-          </svg>
-        </div>
-
-        {/* Wave layer 3 — Foam / white wash */}
-        <div className="wave-layer wave-layer-3">
-          <svg
-            className="wave-svg"
-            viewBox="0 0 2880 320"
-            preserveAspectRatio="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              fill="#ffffff"
-              d="M0,0L2880,0L2880,155C2832,148,2736,130,2640,128C2544,126,2448,140,2352,155C2256,170,2160,190,2064,185C1968,180,1872,155,1776,142C1680,130,1584,130,1488,140C1392,150,1296,170,1200,178C1104,186,1008,180,912,168C816,156,720,138,624,132C528,126,432,132,336,145C240,158,144,175,48,172L0,168Z"
-            />
-          </svg>
-        </div>
-
-        {/* Gradient fade — blends wave edge into sand */}
-        <div className="wave-fade" />
-      </div>
+      {/* WebGL Beach Wave Background */}
+      <BeachWaveBackground
+        speed={0.8}
+        colorDeep="#1a9e9e"
+        colorShallow="#5ce0d6"
+        colorSand="#dcbf8e"
+      />
 
       {/* Top Navigation */}
       <nav className="flex justify-between items-center px-12 py-6 relative z-10">
