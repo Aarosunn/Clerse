@@ -1,6 +1,27 @@
 # Clerse Backend — Technical Context
 
-> FastAPI backend for Clerse, an infinite canvas where AI-powered nodes connect and share context. Backend handles all Claude API calls, content extraction, persistence, and tool execution.
+## Build Status
+
+| Plan | Feature | Status |
+|------|---------|--------|
+| 1 | Foundation (config, database, ORM models, Alembic migration) | ✅ Done |
+| 2 | Workspace CRUD endpoints | ✅ Done |
+| 3 | Skills + context assembly + tool definitions | ✅ Done |
+| 4 | Streaming chat + SSE + tool execution | ⬜ Not started |
+| 5 | Extraction (PDF, YouTube, Article) | ⬜ Not started |
+| 6 | Messages GET endpoint | ⬜ Not started |
+| 7 | File upload endpoint | ⬜ Not started |
+| 8 | Branching endpoint | ⬜ Not started |
+
+**Next task:** Plan 4 — Streaming chat, SSE, tool execution.
+**Branch:** `dev`
+**Key files already built:** `app/core/`, `app/models/clerse.py`, `app/routers/workspaces.py`, `app/schemas/clerse.py`, `app/services/skills.py`, `app/services/context.py`, `app/services/tools.py`, `alembic/`
+
+### Notes for Plan 4 (from Plan 3 review)
+- **PDF document blocks** — `build_file_block()` uses `{"type": "document"}` which is supported by all three listed models (haiku-4-5, sonnet-4-6, opus-4-6). No compatibility guard needed.
+- **Own-message truncation** — cap own messages at 50 in `services/context.py` (`own_messages = own_messages[-50:]`) before building the Anthropic messages list. Currently only linked messages are capped.
+
+ FastAPI backend for Clerse, an infinite canvas where AI-powered nodes connect and share context. Backend handles all Claude API calls, content extraction, persistence, and tool execution.
 
 ---
 
