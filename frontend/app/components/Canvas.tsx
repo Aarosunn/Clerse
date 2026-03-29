@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useState, useEffect, useContext } from "react";
+import { createContext, useCallback, useState, useEffect, useContext, useRef } from "react";
 import {
   ReactFlow,
   Edge,
@@ -85,7 +85,7 @@ function CanvasInner({ workspaceId }: CanvasProps) {
 
   /* ── Node drag preview state ── */
   const [draggingNodeType, setDraggingNodeType] = useState<NodeKind | null>(null);
-  const [dragMousePos, setDragMousePos] = useState<{ x: number; y: number } | null>(null);
+  const dragPreviewRef = useRef<HTMLDivElement>(null);
 
   function startConnect(nodeId: string) {
     setConnectingFrom(nodeId);
@@ -122,7 +122,6 @@ function CanvasInner({ workspaceId }: CanvasProps) {
 
   function cancelDrag() {
     setDraggingNodeType(null);
-    setDragMousePos(null);
   }
 
   function placeDraggingNode(e: React.MouseEvent) {
@@ -147,8 +146,9 @@ function CanvasInner({ workspaceId }: CanvasProps) {
     if (connectingFrom) {
       setMouseScreen({ x: e.clientX, y: e.clientY });
     }
-    if (draggingNodeType) {
-      setDragMousePos({ x: e.clientX, y: e.clientY });
+    if (draggingNodeType && dragPreviewRef.current) {
+      // Update style directly on the ref, bypassing React render lifecycle
+      dragPreviewRef.current.style.transform = `translate(${e.clientX - 32}px, ${e.clientY - 32}px)`;
     }
   }
 
@@ -408,12 +408,17 @@ function CanvasInner({ workspaceId }: CanvasProps) {
         )}
 
         {/* Node drag preview — floating bubble that follows cursor */}
-        {draggingNodeType && dragMousePos && (
+        {draggingNodeType && (
           <div
+            ref={dragPreviewRef}
             className="node-drag-preview"
             style={{
-              left: dragMousePos.x - 32,
-              top: dragMousePos.y - 32,
+              position: 'fixed',
+              left: 0,
+              top: 0,
+              transform: `translate(-1000px, -1000px)`,
+              pointerEvents: 'none',
+              zIndex: 9999,
               color: NODE_COLORS[draggingNodeType] || "#476083",
             }}
           >

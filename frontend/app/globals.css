@@ -360,7 +360,8 @@ body {
   pointer-events: none;
   position: fixed;
   z-index: 9999;
-  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Exclude transform from transition for direct DOM manipulation performance */
+  transition: opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1), color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .node-drag-preview::after {
