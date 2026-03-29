@@ -241,3 +241,37 @@ body {
 .cta-secondary:hover {
   background: rgba(188, 200, 209, 0.25);
 }
+
+/* Node drag preview — pop animation and float */
+@keyframes nodePop {
+  0% {
+    transform: scale(0.5) rotate(-10deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.15) rotate(5deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+.node-drag-preview {
+  animation: nodePop 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  pointer-events: none;
+  position: fixed;
+  z-index: 9999;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.node-drag-preview::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.15;
+  filter: blur(8px);
+  z-index: -1;
+}

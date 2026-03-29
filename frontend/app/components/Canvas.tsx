@@ -29,6 +29,14 @@ import YouTubeNode from "./nodes/YouTubeNode";
 import ArticleNode from "./nodes/ArticleNode";
 import ImageNode from "./nodes/ImageNode";
 import FlashcardNode from "./nodes/FlashcardNode";
+import {
+  SparkleIcon,
+  PdfIcon,
+  PlayCircleIcon,
+  ArticleIcon as ArticleIconComponent,
+  ImageIcon as ImageIconComponent,
+  FlashcardIcon,
+} from "./Icons";
 
 /* ── Connect mode context ── */
 interface ConnectContextValue {
@@ -75,6 +83,10 @@ function CanvasInner({ workspaceId }: CanvasProps) {
   const [connectingFrom, setConnectingFrom] = useState<string | null>(null);
   const [mouseScreen, setMouseScreen] = useState<{ x: number; y: number } | null>(null);
 
+  /* ── Node drag preview state ── */
+  const [draggingNodeType, setDraggingNodeType] = useState<NodeKind | null>(null);
+  const [dragMousePos, setDragMousePos] = useState<{ x: number; y: number } | null>(null);
+
   function startConnect(nodeId: string) {
     setConnectingFrom(nodeId);
   }
@@ -103,21 +115,54 @@ function CanvasInner({ workspaceId }: CanvasProps) {
     setMouseScreen(null);
   }
 
-  // Track mouse for the connection line
+  /* ── Node drag preview handlers ── */
+  function startDraggingNode(kind: NodeKind) {
+    setDraggingNodeType(kind);
+  }
+
+  function cancelDrag() {
+    setDraggingNodeType(null);
+    setDragMousePos(null);
+  }
+
+  function placeDraggingNode(e: React.MouseEvent) {
+    if (!draggingNodeType) return;
+
+    // Get the ReactFlow wrapper element
+    const reactFlowBounds = (e.target as HTMLElement).closest('.react-flow')?.getBoundingClientRect();
+    if (!reactFlowBounds) return;
+
+    // Calculate relative position within the canvas
+    const position = {
+      x: e.clientX - reactFlowBounds.left - 160, // Offset to center the node
+      y: e.clientY - reactFlowBounds.top - 100,
+    };
+
+    spawnNode(draggingNodeType, undefined, position);
+    cancelDrag();
+  }
+
+  // Track mouse for the connection line and drag preview
   function handleMouseMove(e: React.MouseEvent) {
     if (connectingFrom) {
       setMouseScreen({ x: e.clientX, y: e.clientY });
     }
+    if (draggingNodeType) {
+      setDragMousePos({ x: e.clientX, y: e.clientY });
+    }
   }
 
-  // Escape key cancels connect mode
+  // Escape key cancels connect mode and drag mode
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape" && connectingFrom) cancelConnect();
+      if (e.key === "Escape") {
+        if (connectingFrom) cancelConnect();
+        if (draggingNodeType) cancelDrag();
+      }
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [connectingFrom]);
+  }, [connectingFrom, draggingNodeType]);
 
   /* ── Multiplayer: room activation ── */
   const [roomId, setRoomId] = useState<string | null>(null);
@@ -228,7 +273,10 @@ function CanvasInner({ workspaceId }: CanvasProps) {
     <ConnectContext.Provider value={{ connectingFrom, startConnect }}>
       <div
         className="w-full h-full relative overflow-hidden"
-        style={{ background: "#f6f3ee", cursor: connectingFrom ? "crosshair" : undefined }}
+        style={{
+          background: "#f6f3ee",
+          cursor: connectingFrom ? "crosshair" : draggingNodeType ? "none" : undefined,
+        }}
         onMouseMove={handleMouseMove}
       >
         {/* Layer 0: Interactive dot grid */}
@@ -291,8 +339,12 @@ function CanvasInner({ workspaceId }: CanvasProps) {
                 completeConnect(node.id);
               }
             }}
-            onPaneClick={() => {
-              if (connectingFrom) cancelConnect();
+            onPaneClick={(e) => {
+              if (connectingFrom) {
+                cancelConnect();
+              } else if (draggingNodeType) {
+                placeDraggingNode(e);
+              }
             }}
             fitView
             fitViewOptions={{ padding: 0.4 }}
@@ -355,13 +407,43 @@ function CanvasInner({ workspaceId }: CanvasProps) {
           </LiveblocksProvider>
         )}
 
+        {/* Node drag preview — floating bubble that follows cursor */}
+        {draggingNodeType && dragMousePos && (
+          <div
+            className="node-drag-preview"
+            style={{
+              left: dragMousePos.x - 32,
+              top: dragMousePos.y - 32,
+              color: NODE_COLORS[draggingNodeType] || "#476083",
+            }}
+          >
+            <div
+              className="w-16 h-16 rounded-full flex items-center justify-center"
+              style={{
+                background: "rgba(255, 255, 255, 0.95)",
+                border: `2px solid ${NODE_COLORS[draggingNodeType] || "#476083"}`,
+                boxShadow: `0 8px 24px ${NODE_COLORS[draggingNodeType]}40`,
+              }}
+            >
+              {draggingNodeType === "claude" && <SparkleIcon size={28} />}
+              {draggingNodeType === "pdf" && <PdfIcon size={28} />}
+              {draggingNodeType === "youtube" && <PlayCircleIcon size={28} />}
+              {draggingNodeType === "article" && <ArticleIconComponent size={28} />}
+              {draggingNodeType === "image" && <ImageIconComponent size={28} />}
+              {draggingNodeType === "flashcard" && <FlashcardIcon size={28} />}
+            </div>
+          </div>
+        )}
+
         {/* Taskbar — Layer 3 glassmorphism, fixed bottom center */}
         <Toolbar
           onAddNode={spawnNode}
+          onStartDrag={startDraggingNode}
           onBranch={spawnBranch}
           onShare={activateRoom}
           roomId={roomId}
           workspaceId={workspaceId}
+          draggingNodeType={draggingNodeType}
         />
       </div>
     </ConnectContext.Provider>

@@ -20,6 +20,7 @@ import {
 
 interface ToolbarProps {
   onAddNode: (kind: NodeKind) => void;
+  onStartDrag?: (kind: NodeKind) => void;
   onBranch: (
     parentId: string,
     parentPosition: { x: number; y: number },
@@ -28,6 +29,7 @@ interface ToolbarProps {
   onShare: () => void;
   roomId: string | null;
   workspaceId?: string;
+  draggingNodeType?: NodeKind | null;
 }
 
 /* Canvas tool buttons (pan, select, connect) */
@@ -51,7 +53,7 @@ function Divider() {
   return <div className="w-px h-6 bg-primary/10 mx-2" />;
 }
 
-export default function Toolbar({ onAddNode, onShare, roomId }: ToolbarProps) {
+export default function Toolbar({ onAddNode, onStartDrag, onShare, roomId, draggingNodeType }: ToolbarProps) {
   const [activeTool, setActiveTool] = useState("pan");
   const [copied, setCopied] = useState(false);
 
@@ -59,6 +61,14 @@ export default function Toolbar({ onAddNode, onShare, roomId }: ToolbarProps) {
     onShare();
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  }
+
+  function handleNodeClick(kind: NodeKind) {
+    if (onStartDrag) {
+      onStartDrag(kind);
+    } else {
+      onAddNode(kind);
+    }
   }
 
   return (
@@ -102,9 +112,13 @@ export default function Toolbar({ onAddNode, onShare, roomId }: ToolbarProps) {
         <button
           key={kind}
           title={`Add ${label} node`}
-          onClick={() => onAddNode(kind)}
+          onClick={() => handleNodeClick(kind)}
           className="flex flex-col items-center justify-center w-10 h-10 rounded-xl transition-all hover:scale-110 active:scale-95 hover:bg-surface-container/60"
-          style={{ color }}
+          style={{
+            color,
+            background: draggingNodeType === kind ? "rgba(71,96,131,0.12)" : "transparent",
+            transform: draggingNodeType === kind ? "scale(0.9)" : "scale(1)",
+          }}
         >
           {icon(18)}
           <span

@@ -14,8 +14,6 @@ import {
   SparkleIcon,
   CheckCircleIcon,
   BranchIcon,
-  ChecklistIcon,
-  CloseIcon,
   CheckIcon,
   AddCircleIcon,
   GlobeIcon,
@@ -42,7 +40,7 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const { getNode, addNodes, addEdges } = useReactFlow();
+  const { getNode, addNodes, addEdges, setNodes } = useReactFlow();
 
   /* ── Send message ── */
   const sendMessage = useCallback(async () => {
@@ -114,6 +112,32 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
     });
   }
 
+  /* ── Handle minimize with node resize ── */
+  function handleMinimizeToggle() {
+    const currentNode = getNode(id);
+    if (!currentNode) return;
+
+    setMinimized((prev) => {
+      const newMinimized = !prev;
+      // Resize node based on minimized state
+      setNodes((nds) =>
+        nds.map((n) =>
+          n.id === id
+            ? {
+                ...n,
+                style: {
+                  ...n.style,
+                  width: newMinimized ? 280 : 420,
+                  height: newMinimized ? 'auto' : undefined,
+                },
+              }
+            : n
+        )
+      );
+      return newMinimized;
+    });
+  }
+
   /* ── Quick branch from a single assistant message ── */
   function quickBranch(upToIndex: number) {
     const currentNode = getNode(id);
@@ -149,12 +173,13 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
       className="bg-surface-container-lowest rounded-xl flex flex-col animate-fade-scale overflow-hidden"
       style={{
         width: "100%",
-        minHeight: 320,
+        minHeight: minimized ? 48 : 320,
+        height: minimized ? 'auto' : undefined,
         border: "1px solid rgba(188,200,209,0.10)",
         boxShadow: "0 12px 40px rgba(28,28,25,0.06)",
       }}
     >
-      <NodeResizer minWidth={320} minHeight={260} color="#476083" />
+      {!minimized && <NodeResizer minWidth={320} minHeight={260} color="#476083" />}
       <Handle type="target" position={Position.Top} />
 
       {/* ── Header §2 ── */}
@@ -167,14 +192,14 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
       >
         {/* Left: macOS dots + title */}
         <div className="flex items-center gap-3">
-          <WindowControls nodeId={id} minimized={minimized} onToggleMinimize={() => setMinimized((m) => !m)} />
+          <WindowControls nodeId={id} minimized={minimized} onToggleMinimize={handleMinimizeToggle} />
           <span
             className="font-headline font-bold text-primary"
             style={{ fontSize: 13 }}
           >
             Intelligence Stream
           </span>
-          {data.parentNodeId && (
+          {data.parentNodeId && !minimized && (
             <span
               className="font-label uppercase tracking-widest text-secondary/60"
               style={{ fontSize: 9 }}
@@ -184,46 +209,48 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
           )}
         </div>
 
-        {/* Right: model tag + selecting badge + branch action */}
-        <div className="flex items-center gap-2">
-          <ModelSelector value={model} onChange={setModel} />
+        {/* Right: model tag + selecting badge + branch action (hide when minimized) */}
+        {!minimized && (
+          <div className="flex items-center gap-2">
+            <ModelSelector value={model} onChange={setModel} />
 
-          {/* CHAT_NODE_DESIGN.md §2 — Selecting badge */}
-          {isSelecting && (
-            <div
-              className="flex items-center gap-1 px-2 py-1 rounded-full font-label uppercase tracking-widest text-white"
-              style={{ fontSize: 9, background: "#00BFFF" }}
+            {/* CHAT_NODE_DESIGN.md §2 — Selecting button (always visible) */}
+            <button
+              onClick={() => {
+                setIsSelecting((v) => !v);
+                setSelectedIndices(new Set());
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full font-label uppercase tracking-widest transition-all whitespace-nowrap"
+              style={{
+                fontSize: 10,
+                background: isSelecting ? "#00BFFF" : "rgba(0, 191, 255, 0.15)",
+                color: isSelecting ? "white" : "#00BFFF",
+                fontWeight: 600,
+              }}
+              title={isSelecting ? "Exit selection mode" : "Enter selection mode"}
             >
               <CheckCircleIcon size={12} />
               Selecting
-            </div>
-          )}
+            </button>
 
-          {/* Branch from selection */}
-          {isSelecting && selectedIndices.size > 0 && (
+            {/* Branch button (always visible) */}
             <button
               onClick={branchFromSelection}
-              className="flex items-center gap-1 px-2 py-1 rounded-full font-label uppercase tracking-widest text-on-tertiary hover:brightness-110 active:scale-95 transition-all"
-              style={{ fontSize: 9, background: "#a43c12" }}
+              disabled={selectedIndices.size === 0}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full font-label uppercase tracking-widest transition-all disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+              style={{
+                fontSize: 10,
+                background: "#a43c12",
+                color: "white",
+                fontWeight: 600,
+              }}
+              title={selectedIndices.size === 0 ? "Select messages to branch" : "Create branch from selection"}
             >
               <BranchIcon size={12} />
               Branch
             </button>
-          )}
-
-          {/* Toggle selection mode */}
-          <button
-            onClick={() => {
-              setIsSelecting((v) => !v);
-              setSelectedIndices(new Set());
-            }}
-            className="w-6 h-6 rounded-lg flex items-center justify-center transition-colors hover:bg-surface-container"
-            style={{ color: isSelecting ? "#00BFFF" : "#6d7981" }}
-            title={isSelecting ? "Exit selection" : "Select messages to branch"}
-          >
-            {isSelecting ? <CloseIcon size={14} /> : <ChecklistIcon size={14} />}
-          </button>
-        </div>
+          </div>
+        )}
       </div>
 
       {/* ── Message area §3 ── */}
