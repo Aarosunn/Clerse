@@ -11,7 +11,7 @@ from app.models.clerse import File, Message, Workspace
 from app.services.skills import get_skill_prompt
 
 # Node types whose file content goes into the system prompt as reference text
-_SYSTEM_PROMPT_NODE_TYPES = {"text", "article", "youtube"}
+_SYSTEM_PROMPT_NODE_TYPES = {"article", "youtube"}
 
 # Node types whose file data is injected as a block in the first user message
 _BLOCK_NODE_TYPES = {"image", "pdf"}
@@ -130,6 +130,50 @@ async def assemble_context(
             if file and file.content_text:
                 title = linked_node.get("data", {}).get("title", "Context")
                 artifact_refs.append(f"## {title}\n{file.content_text}")
+
+        elif node_type == "text":
+            # TextNode stores content only in canvas node data (no File record)
+            content = linked_node.get("data", {}).get("content", "")
+            if content:
+                artifact_refs.append(f"## Text Note\n{content}")
+
+        elif node_type == "pdfdoc":
+            # Try File record first (tool-created), fall back to canvas node data
+            file = await get_node_file(workspace_id, linked_id, db)
+            title = linked_node.get("data", {}).get("title", "Document")
+            if file and file.content_text:
+                artifact_refs.append(f"## {title}\n{file.content_text}")
+            else:
+                markdown = linked_node.get("data", {}).get("markdown", "")
+                if markdown:
+                    artifact_refs.append(f"## {title}\n{markdown}")
+
+        elif node_type == "flashcard":
+            file = await get_node_file(workspace_id, linked_id, db)
+            title = linked_node.get("data", {}).get("title", "Flashcards")
+            if file and file.content_text:
+                artifact_refs.append(f"## {title}\n{file.content_text}")
+            else:
+                cards = linked_node.get("data", {}).get("cards", [])
+                if cards:
+                    lines = [f"Q: {c.get('front', '')}\nA: {c.get('back', '')}" for c in cards]
+                    artifact_refs.append(f"## {title}\n" + "\n\n".join(lines))
+
+        elif node_type == "quiz":
+            file = await get_node_file(workspace_id, linked_id, db)
+            title = linked_node.get("data", {}).get("title", "Quiz")
+            if file and file.content_text:
+                artifact_refs.append(f"## {title}\n{file.content_text}")
+            else:
+                questions = linked_node.get("data", {}).get("questions", [])
+                if questions:
+                    lines = []
+                    for q in questions:
+                        lines.append(f"Q: {q.get('question', '')}")
+                        for i, opt in enumerate(q.get("options", [])):
+                            lines.append(f"  {chr(65 + i)}. {opt}")
+                        lines.append(f"Answer: {q.get('correct_answer', '')}")
+                    artifact_refs.append(f"## {title}\n" + "\n".join(lines))
 
     # 3. Append reference material to system prompt
     if artifact_refs:

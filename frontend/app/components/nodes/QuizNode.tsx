@@ -9,6 +9,18 @@ import WindowControls from "./WindowControls";
 
 const ACCENT = "#d97706";
 
+function normalizeCorrectAnswer(answer: string, options: string[]): string {
+  const trimmed = answer.trim();
+  if (/^[A-D]$/i.test(trimmed)) return trimmed.toUpperCase();
+  const letterPrefix = trimmed.match(/^([A-D])[.):\s]/i);
+  if (letterPrefix) return letterPrefix[1].toUpperCase();
+  const idx = options.findIndex(
+    (o) => o.trim().toLowerCase() === trimmed.toLowerCase()
+  );
+  if (idx >= 0) return String.fromCharCode(65 + idx);
+  return trimmed;
+}
+
 const QUIZ_SYSTEM_PROMPT = `Generate quiz questions from the provided context.
 Respond ONLY with a valid JSON array. No preamble, no markdown fences.
 Each item: {"question": "...", "options": ["option text", "option text", "option text", "option text"], "correct_answer": "A", "explanation": "..."}
@@ -17,7 +29,12 @@ The options array must contain 4 answer texts. correct_answer must be exactly on
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function QuizNode({ id, data: rawData }: NodeProps<any>) {
   const data = rawData as QuizNodeData;
-  const [questions, setQuestions] = useState<QuizQuestion[]>(data.questions);
+  const [questions, setQuestions] = useState<QuizQuestion[]>(
+    (data.questions ?? []).map((q) => ({
+      ...q,
+      correct_answer: normalizeCorrectAnswer(q.correct_answer, q.options),
+    }))
+  );
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
@@ -28,21 +45,6 @@ export default function QuizNode({ id, data: rawData }: NodeProps<any>) {
   const [answered, setAnswered] = useState<Set<number>>(new Set());
   const streamRef = useRef("");
   const { startConnect: startConnectMode, workspaceId } = useConnectMode();
-
-  function normalizeCorrectAnswer(answer: string, options: string[]): string {
-    const trimmed = answer.trim();
-    // Already a single letter A-D
-    if (/^[A-D]$/i.test(trimmed)) return trimmed.toUpperCase();
-    // Starts with "A." / "A)" / "A " — extract the letter
-    const letterPrefix = trimmed.match(/^([A-D])[.):\s]/i);
-    if (letterPrefix) return letterPrefix[1].toUpperCase();
-    // Full option text — find matching index
-    const idx = options.findIndex(
-      (o) => o.trim().toLowerCase() === trimmed.toLowerCase()
-    );
-    if (idx >= 0) return String.fromCharCode(65 + idx);
-    return trimmed;
-  }
 
   function handleConnect() {
     if (questions.length === 0) return;
