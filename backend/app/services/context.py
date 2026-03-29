@@ -88,7 +88,9 @@ async def assemble_context(
     """
     # 1. Resolve skill from canvas_state
     workspace = await db.get(Workspace, workspace_id)
-    canvas = workspace.canvas_state if workspace else None
+    if workspace is None:
+        raise ValueError(f"Workspace {workspace_id} not found")
+    canvas = workspace.canvas_state
     node_data = find_node_in_canvas(canvas, node_id)
     skill = node_data.get("data", {}).get("skill") if node_data else None
     system = get_skill_prompt(skill)
@@ -140,12 +142,20 @@ async def assemble_context(
 
     # 7. Prepend file blocks into first user message
     if prepend_blocks and messages:
-        for i, m in enumerate(messages):
-            if m["role"] == "user":
-                messages[i] = {
-                    "role": "user",
-                    "content": prepend_blocks + [{"type": "text", "text": m["content"]}],
-                }
-                break
+        first_user_idx = next(
+            (i for i, m in enumerate(messages) if m["role"] == "user"), None
+        )
+        if first_user_idx is not None:
+            m = messages[first_user_idx]
+            messages[first_user_idx] = {
+                "role": "user",
+                "content": prepend_blocks + [{"type": "text", "text": m["content"]}],
+            }
+        else:
+            # No user message to attach file blocks to — prepend a synthetic user turn
+            messages.insert(0, {
+                "role": "user",
+                "content": prepend_blocks,
+            })
 
     return system, messages, context_truncated

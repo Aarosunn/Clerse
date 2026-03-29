@@ -2,7 +2,7 @@
 import uuid
 import pytest
 from app.models.clerse import Workspace, Message, File
-from app.services.context import get_node_messages, get_node_file
+from app.services.context import get_node_messages, get_node_file, find_node_in_canvas, assemble_context
 
 
 @pytest.mark.asyncio
@@ -83,8 +83,6 @@ async def test_get_node_file_found(db_session):
     assert result is not None
     assert result.content_text == "page 1 text"
 
-
-from app.services.context import find_node_in_canvas, assemble_context
 
 
 # --- find_node_in_canvas ---
