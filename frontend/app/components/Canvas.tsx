@@ -42,12 +42,16 @@ import {
   TextIcon as TextIconComponent,
 } from "./Icons";
 
+const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
+
 /* ── Connect mode context ── */
 interface ConnectContextValue {
   connectingFrom: string | null;
   cachedMessages: Message[] | null;
   connectionOrigin: { x: number; y: number } | null;
   startConnect: (nodeId: string, messages?: Message[], origin?: { x: number; y: number }) => void;
+  workspaceId: string;
+  spawnNode: (kind: NodeKind, initialMessages?: Message[], position?: { x: number; y: number }) => string;
 }
 
 export const ConnectContext = createContext<ConnectContextValue>({
@@ -55,6 +59,8 @@ export const ConnectContext = createContext<ConnectContextValue>({
   cachedMessages: null,
   connectionOrigin: null,
   startConnect: () => {},
+  workspaceId: "",
+  spawnNode: () => "",
 });
 
 export function useConnectMode() {
@@ -156,7 +162,7 @@ function CanvasInner({ workspaceId }: CanvasProps) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [nodes, , onNodesChange] = useNodesState<any>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
-  const { addNodes, addEdges, getNode, setNodes, flowToScreenPosition } = useReactFlow();
+  const { addNodes, addEdges, getNode, setNodes, getViewport, flowToScreenPosition } = useReactFlow();
 
   /* ── Connect mode state ── */
   const [connectingFrom, setConnectingFrom] = useState<string | null>(null);
@@ -164,6 +170,9 @@ function CanvasInner({ workspaceId }: CanvasProps) {
   const [mouseScreen, setMouseScreen] = useState<{ x: number; y: number } | null>(null);
 
   const [connectionOrigin, setConnectionOrigin] = useState<{ x: number; y: number } | null>(null);
+
+  const hydrated = useRef(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /* ── Node drag preview state ── */
   const [draggingNodeType, setDraggingNodeType] = useState<NodeKind | null>(null);
@@ -279,6 +288,61 @@ function CanvasInner({ workspaceId }: CanvasProps) {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [connectingFrom, draggingNodeType]);
 
+  /* ── Workspace persistence ── */
+
+  // Mount: hydrate nodes + edges from backend
+  useEffect(() => {
+    async function hydrate() {
+      try {
+        const res = await fetch(`${BACKEND}/api/workspaces/${workspaceId}`);
+        if (res.ok) {
+          const workspace = await res.json();
+          const state = workspace.canvas_state;
+          if (state) {
+            if (state.nodes) setNodes(state.nodes);
+            if (state.edges) setEdges(state.edges);
+          }
+        }
+      } finally {
+        hydrated.current = true;
+      }
+    }
+    hydrate();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workspaceId]);
+
+  // Debounced auto-save (30s) on nodes/edges change
+  useEffect(() => {
+    if (!hydrated.current) return;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      fetch(`${BACKEND}/api/workspaces/${workspaceId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ canvas_state: { nodes, edges, viewport: getViewport() } }),
+      });
+    }, 30_000);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nodes, edges, workspaceId]);
+
+  // Save on page close
+  useEffect(() => {
+    function handleBeforeUnload() {
+      fetch(`${BACKEND}/api/workspaces/${workspaceId}`, {
+        method: "PUT",
+        keepalive: true,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ canvas_state: { nodes, edges, viewport: getViewport() } }),
+      });
+    }
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nodes, edges, workspaceId]);
+
   /* ── Multiplayer: room activation ── */
   const [roomId, setRoomId] = useState<string | null>(null);
 
@@ -388,7 +452,7 @@ function CanvasInner({ workspaceId }: CanvasProps) {
   const sourcePos = connectionOrigin ?? (connectingFrom ? getSourceScreenPos() : null);
 
   return (
-    <ConnectContext.Provider value={{ connectingFrom, cachedMessages, connectionOrigin, startConnect }}>
+    <ConnectContext.Provider value={{ connectingFrom, cachedMessages, connectionOrigin, startConnect, workspaceId, spawnNode }}>
       <div
         className="w-full h-full relative overflow-hidden"
         style={{
