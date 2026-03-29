@@ -72,15 +72,16 @@ async def create_branch(
     db: AsyncSession,
 ) -> Branch:
     if source_message_ids:
+        unique_ids = list(dict.fromkeys(source_message_ids))
         result = await db.execute(
             select(Message).where(
-                Message.id.in_(source_message_ids),
+                Message.id.in_(unique_ids),
                 Message.workspace_id == workspace_id,
                 Message.node_id == parent_node_id,
             )
         )
         found = list(result.scalars().all())
-        if len(found) != len(source_message_ids):
+        if len(found) != len(unique_ids):
             raise InvalidSourceMessageError(
                 "One or more source_message_ids do not belong to the given node_id."
             )

@@ -1,6 +1,11 @@
 # tests/test_branching.py
 import uuid
+import pytest
+import pytest_asyncio
+from sqlalchemy import select
 from app.schemas.clerse import BranchCreateRequest, BranchCreateResponse
+from app.models.clerse import Branch, Message, Workspace
+from app.services.workspaces import create_branch, InvalidSourceMessageError
 
 
 def test_branch_create_request_schema():
@@ -29,12 +34,6 @@ def test_branch_create_response_schema():
     assert resp.parent_node_id == "node-abc"
     assert resp.child_node_id == "node-xyz"
     assert resp.source_message_ids == [msg_id]
-
-
-import pytest
-import pytest_asyncio
-from app.models.clerse import Branch, Message, Workspace
-from app.services.workspaces import create_branch, InvalidSourceMessageError
 
 
 @pytest_asyncio.fixture
@@ -79,7 +78,6 @@ async def test_create_branch_success(db, workspace, messages):
 
 @pytest.mark.asyncio
 async def test_create_branch_persisted(db, workspace, messages):
-    from sqlalchemy import select
     source_ids = [messages[0].id]
     await create_branch(
         workspace_id=workspace.id,
