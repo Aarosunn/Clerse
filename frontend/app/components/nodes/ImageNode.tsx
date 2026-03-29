@@ -5,6 +5,7 @@ import { Handle, Position, NodeProps, useReactFlow, NodeResizer } from "@xyflow/
 import { ImageNodeData, ClaudeNodeData } from "@/types/nodes";
 import { buildImageMessage } from "@/lib/conversations";
 import { ImageIcon, AddPhotoIcon, SparkleIcon } from "../Icons";
+import { useConnectMode } from "../Canvas";
 import WindowControls from "./WindowControls";
 
 const ACCENT = "#7b5ea7";
@@ -19,6 +20,17 @@ export default function ImageNode({ id, data: rawData }: NodeProps<any>) {
   const [minimized, setMinimized] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const { addNodes, addEdges, getNode } = useReactFlow();
+  const { startConnect: startConnectMode } = useConnectMode();
+
+  function handleConnect() {
+    if (!base64) return;
+    // For images, pass a text description — the actual vision call happens in ClaudeNode
+    const msgs = [{
+      role: "user" as const,
+      content: [{ type: "text" as const, text: `[Image: ${fileName}] Attached image for analysis.` }],
+    }];
+    startConnectMode(id, msgs);
+  }
 
   function handleFile(file: File) {
     setFileName(file.name);
@@ -61,15 +73,27 @@ export default function ImageNode({ id, data: rawData }: NodeProps<any>) {
       style={{ width: "100%", background: "#ffffff", boxShadow: "0 8px 24px rgba(28,28,25,0.08)", border: "1px solid rgba(188,200,209,0.15)" }}
     >
       <NodeResizer minWidth={260} minHeight={180} color={ACCENT} />
-      <Handle type="target" position={Position.Top} />
+      <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
 
       <div
-        className="flex items-center gap-3 px-4 py-3"
+        className="flex items-center justify-between px-4 py-3"
         style={{ borderBottom: "1px solid rgba(188,200,209,0.12)", background: `rgba(123,94,167,0.04)` }}
       >
-        <WindowControls nodeId={id} minimized={minimized} onToggleMinimize={() => setMinimized((m) => !m)} />
-        <ImageIcon size={16} style={{ color: ACCENT }} />
-        <span className="font-label uppercase tracking-widest text-on-surface-variant" style={{ fontSize: 10 }}>Image</span>
+        <div className="flex items-center gap-3">
+          <WindowControls nodeId={id} minimized={minimized} onToggleMinimize={() => setMinimized((m) => !m)} />
+          <ImageIcon size={16} style={{ color: ACCENT }} />
+          <span className="font-label uppercase tracking-widest text-on-surface-variant" style={{ fontSize: 10 }}>Image</span>
+        </div>
+        {base64 && (
+          <button
+            onClick={handleConnect}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full font-label uppercase tracking-widest transition-all whitespace-nowrap"
+            style={{ fontSize: 10, background: "#00668a", color: "white", fontWeight: 600 }}
+            title="Connect this image to another node"
+          >
+            Connect
+          </button>
+        )}
       </div>
 
       {!minimized && (
@@ -131,7 +155,7 @@ export default function ImageNode({ id, data: rawData }: NodeProps<any>) {
         </div>
       )}
 
-      <Handle type="source" position={Position.Bottom} />
+      <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} />
     </div>
   );
 }

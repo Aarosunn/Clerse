@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { Handle, Position, NodeProps, NodeResizer } from "@xyflow/react";
 import { FlashcardNodeData, FlashCard } from "@/types/nodes";
 import { FlashcardIcon, SparkleIcon, ChevronLeftIcon, ChevronRightIcon } from "../Icons";
+import { useConnectMode } from "../Canvas";
 import WindowControls from "./WindowControls";
 
 const ACCENT = "#c89b3c";
@@ -22,6 +23,17 @@ export default function FlashcardNode({ id, data: rawData }: NodeProps<any>) {
   const [sourceText, setSourceText] = useState("");
   const [minimized, setMinimized] = useState(false);
   const streamRef = useRef("");
+  const { startConnect: startConnectMode } = useConnectMode();
+
+  function handleConnect() {
+    if (cards.length === 0) return;
+    const text = cards.map((c, i) => `Q${i + 1}: ${c.front}\nA${i + 1}: ${c.back}`).join("\n\n");
+    const msgs = [{
+      role: "user" as const,
+      content: [{ type: "text" as const, text: `Flashcards:\n\n${text}` }],
+    }];
+    startConnectMode(id, msgs);
+  }
 
   async function generateCards() {
     if (!sourceText.trim()) return;
@@ -65,7 +77,7 @@ export default function FlashcardNode({ id, data: rawData }: NodeProps<any>) {
       style={{ width: "100%", background: "#ffffff", boxShadow: "0 8px 24px rgba(28,28,25,0.08)", border: "1px solid rgba(188,200,209,0.15)" }}
     >
       <NodeResizer minWidth={260} minHeight={200} color={ACCENT} />
-      <Handle type="target" position={Position.Top} />
+      <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
 
       <div
         className="flex items-center justify-between px-4 py-3"
@@ -76,11 +88,23 @@ export default function FlashcardNode({ id, data: rawData }: NodeProps<any>) {
           <FlashcardIcon size={16} style={{ color: ACCENT }} />
           <span className="font-label uppercase tracking-widest text-on-surface-variant" style={{ fontSize: 10 }}>Flashcards</span>
         </div>
-        {cards.length > 0 && (
-          <span className="font-label text-on-surface-variant" style={{ fontSize: 10 }}>
-            {currentIndex + 1} / {cards.length}
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {cards.length > 0 && (
+            <>
+              <span className="font-label text-on-surface-variant" style={{ fontSize: 10 }}>
+                {currentIndex + 1} / {cards.length}
+              </span>
+              <button
+                onClick={handleConnect}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full font-label uppercase tracking-widest transition-all whitespace-nowrap"
+                style={{ fontSize: 10, background: "#00668a", color: "white", fontWeight: 600 }}
+                title="Connect these flashcards to another node"
+              >
+                Connect
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {!minimized && (
@@ -165,7 +189,7 @@ export default function FlashcardNode({ id, data: rawData }: NodeProps<any>) {
         </div>
       )}
 
-      <Handle type="source" position={Position.Bottom} />
+      <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} />
     </div>
   );
 }

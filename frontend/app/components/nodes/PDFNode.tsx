@@ -12,6 +12,7 @@ import {
   LoadingIcon,
   SparkleIcon,
 } from "../Icons";
+import { useConnectMode } from "../Canvas";
 import WindowControls from "./WindowControls";
 
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
@@ -27,6 +28,16 @@ export default function PDFNode({ id, data: rawData }: NodeProps<any>) {
   const [minimized, setMinimized] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const { addNodes, addEdges, getNode } = useReactFlow();
+  const { startConnect: startConnectMode } = useConnectMode();
+
+  function handleConnect() {
+    if (!extracted) return;
+    const msgs = [{
+      role: "user" as const,
+      content: [{ type: "text" as const, text: `PDF: "${fileName}" (${pageCount} pages)\n\n${extracted.slice(0, 8000)}` }],
+    }];
+    startConnectMode(id, msgs);
+  }
 
   async function handleFile(file: File) {
     setLoading(true);
@@ -86,7 +97,7 @@ export default function PDFNode({ id, data: rawData }: NodeProps<any>) {
       }}
     >
       <NodeResizer minWidth={280} minHeight={200} color="#a43c12" />
-      <Handle type="target" position={Position.Top} />
+      <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
 
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3" style={{ padding: "12px 16px" }}>
@@ -102,13 +113,26 @@ export default function PDFNode({ id, data: rawData }: NodeProps<any>) {
           </span>
         </div>
 
-        {/* Expand toggle */}
-        <button
-          onClick={() => setExpanded((v) => !v)}
-          className="text-outline hover:text-on-surface transition-colors cursor-pointer"
-        >
-          {expanded ? <CollapseIcon size={16} /> : <ExpandIcon size={16} />}
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Connect button */}
+          {extracted && (
+            <button
+              onClick={handleConnect}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full font-label uppercase tracking-widest transition-all whitespace-nowrap"
+              style={{ fontSize: 10, background: "#00668a", color: "white", fontWeight: 600 }}
+              title="Connect this PDF to another node"
+            >
+              Connect
+            </button>
+          )}
+          {/* Expand toggle */}
+          <button
+            onClick={() => setExpanded((v) => !v)}
+            className="text-outline hover:text-on-surface transition-colors cursor-pointer"
+          >
+            {expanded ? <CollapseIcon size={16} /> : <ExpandIcon size={16} />}
+          </button>
+        </div>
       </div>
 
       {/* PDF Preview area */}
@@ -218,7 +242,7 @@ export default function PDFNode({ id, data: rawData }: NodeProps<any>) {
         )}
       </div>}
 
-      <Handle type="source" position={Position.Bottom} />
+      <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} />
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { Handle, Position, NodeProps, useReactFlow, NodeResizer } from "@xyflow/
 import { ArticleNodeData, ClaudeNodeData } from "@/types/nodes";
 import { buildUserMessage } from "@/lib/conversations";
 import { ArticleIcon, DownloadIcon, SparkleIcon } from "../Icons";
+import { useConnectMode } from "../Canvas";
 import WindowControls from "./WindowControls";
 
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
@@ -19,6 +20,16 @@ export default function ArticleNode({ id, data: rawData }: NodeProps<any>) {
   const [minimized, setMinimized] = useState(false);
   const ACCENT = "#4a7c59";
   const { addNodes, addEdges, getNode } = useReactFlow();
+  const { startConnect: startConnectMode } = useConnectMode();
+
+  function handleConnect() {
+    if (!content) return;
+    const msgs = [{
+      role: "user" as const,
+      content: [{ type: "text" as const, text: `Article: "${title}"\n\n${content.slice(0, 8000)}` }],
+    }];
+    startConnectMode(id, msgs);
+  }
 
   async function extract() {
     if (!url.trim()) return;
@@ -65,15 +76,27 @@ export default function ArticleNode({ id, data: rawData }: NodeProps<any>) {
       style={{ width: "100%", background: "#ffffff", boxShadow: "0 8px 24px rgba(28,28,25,0.08)", border: "1px solid rgba(188,200,209,0.15)" }}
     >
       <NodeResizer minWidth={280} minHeight={180} color={ACCENT} />
-      <Handle type="target" position={Position.Top} />
+      <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
 
       <div
-        className="flex items-center gap-3 px-4 py-3"
+        className="flex items-center justify-between px-4 py-3"
         style={{ borderBottom: "1px solid rgba(188,200,209,0.12)", background: `rgba(74,124,89,0.04)` }}
       >
-        <WindowControls nodeId={id} minimized={minimized} onToggleMinimize={() => setMinimized((m) => !m)} />
-        <ArticleIcon size={16} style={{ color: ACCENT }} />
-        <span className="font-label uppercase tracking-widest text-on-surface-variant" style={{ fontSize: 10 }}>Article</span>
+        <div className="flex items-center gap-3">
+          <WindowControls nodeId={id} minimized={minimized} onToggleMinimize={() => setMinimized((m) => !m)} />
+          <ArticleIcon size={16} style={{ color: ACCENT }} />
+          <span className="font-label uppercase tracking-widest text-on-surface-variant" style={{ fontSize: 10 }}>Article</span>
+        </div>
+        {content && (
+          <button
+            onClick={handleConnect}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full font-label uppercase tracking-widest transition-all whitespace-nowrap"
+            style={{ fontSize: 10, background: "#00668a", color: "white", fontWeight: 600 }}
+            title="Connect this article to another node"
+          >
+            Connect
+          </button>
+        )}
       </div>
 
       {!minimized && (
@@ -126,7 +149,7 @@ export default function ArticleNode({ id, data: rawData }: NodeProps<any>) {
         </div>
       )}
 
-      <Handle type="source" position={Position.Bottom} />
+      <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} />
     </div>
   );
 }
