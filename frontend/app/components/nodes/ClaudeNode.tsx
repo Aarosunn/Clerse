@@ -25,6 +25,11 @@ import {
   ThumbUpIcon,
 } from "../Icons";
 
+interface PendingSuggestion {
+  title: string;
+  reason: string;
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
   const data = rawData as ClaudeNodeData;
@@ -37,10 +42,6 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
   /* CHAT_NODE_DESIGN.md §2 — "Selecting" state */
   const [isSelecting, setIsSelecting] = useState(false);
 
-  interface PendingSuggestion {
-    title: string;
-    reason: string;
-  }
   const [pendingSuggestion, setPendingSuggestion] = useState<PendingSuggestion | null>(null);
   const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set());
   const [minimized, setMinimized] = useState(false);
@@ -129,7 +130,8 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
               name === "create_branches" ||
               name === "create_markdown" ||
               name === "generate_flashcards" ||
-              name === "generate_quiz"
+              name === "generate_quiz" ||
+              name === "create_pdf_doc"
             ) {
               const toolNodes = event.nodes as Node[];
               const toolEdges = event.edges as Edge[];
@@ -254,6 +256,11 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
     const currentNode = getNode(id);
     const pos = currentNode?.position ?? { x: 0, y: 0 };
     const branchId = spawnNode("claude", undefined, { x: pos.x + 460, y: pos.y + 40 });
+    setNodes((nds) =>
+      nds.map((n) =>
+        n.id === branchId ? { ...n, data: { ...n.data, label: pendingSuggestion!.title } } : n
+      )
+    );
     addEdges({
       id: `${id}-${branchId}`,
       source: id,
