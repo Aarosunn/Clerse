@@ -5,6 +5,7 @@ import { Handle, Position, NodeProps, useReactFlow, NodeResizer } from "@xyflow/
 import { YouTubeNodeData, ClaudeNodeData } from "@/types/nodes";
 import { buildUserMessage } from "@/lib/conversations";
 import { PlayCircleIcon, DownloadIcon, SparkleIcon } from "../Icons";
+import { useConnectMode } from "../Canvas";
 import WindowControls from "./WindowControls";
 
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
@@ -18,6 +19,16 @@ export default function YouTubeNode({ id, data: rawData }: NodeProps<any>) {
   const [loading, setLoading] = useState(false);
   const [minimized, setMinimized] = useState(false);
   const { addNodes, addEdges, getNode } = useReactFlow();
+  const { startConnect: startConnectMode } = useConnectMode();
+
+  function handleConnect() {
+    if (!transcript) return;
+    const msgs = [{
+      role: "user" as const,
+      content: [{ type: "text" as const, text: `YouTube: "${title}"\n\nTranscript:\n${transcript.slice(0, 8000)}` }],
+    }];
+    startConnectMode(id, msgs);
+  }
 
   async function extract() {
     if (!url.trim()) return;
@@ -71,7 +82,7 @@ export default function YouTubeNode({ id, data: rawData }: NodeProps<any>) {
       }}
     >
       <NodeResizer minWidth={280} minHeight={180} color="#00668a" />
-      <Handle type="target" position={Position.Top} />
+      <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
 
       {/* Header */}
       <div
@@ -85,6 +96,16 @@ export default function YouTubeNode({ id, data: rawData }: NodeProps<any>) {
             YouTube
           </span>
         </div>
+        {transcript && (
+          <button
+            onClick={handleConnect}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full font-label uppercase tracking-widest transition-all whitespace-nowrap"
+            style={{ fontSize: 10, background: "#00668a", color: "white", fontWeight: 600 }}
+            title="Connect this transcript to another node"
+          >
+            Connect
+          </button>
+        )}
       </div>
 
       {!minimized && (
@@ -138,7 +159,7 @@ export default function YouTubeNode({ id, data: rawData }: NodeProps<any>) {
         </div>
       )}
 
-      <Handle type="source" position={Position.Bottom} />
+      <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} />
     </div>
   );
 }
