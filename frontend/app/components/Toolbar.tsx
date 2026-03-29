@@ -34,7 +34,7 @@ interface ToolbarProps {
 
 /* Node type creation buttons */
 const NODE_TOOLS: { kind: NodeKind; icon: (s: number) => ReactNode; label: string; color: string }[] = [
-  { kind: "claude",    icon: (s) => <SparkleIcon size={s} />,     label: "Claude",   color: "#476083" },
+  { kind: "claude",    icon: (s) => <SparkleIcon size={s} />,     label: "Clerse",   color: "#476083" },
   { kind: "pdf",       icon: (s) => <PdfIcon size={s} />,         label: "PDF",      color: "#a43c12" },
   { kind: "youtube",   icon: (s) => <PlayCircleIcon size={s} />,  label: "YouTube",  color: "#00668a" },
   { kind: "article",   icon: (s) => <ArticleIcon size={s} />,     label: "Article",  color: "#4a7c59" },

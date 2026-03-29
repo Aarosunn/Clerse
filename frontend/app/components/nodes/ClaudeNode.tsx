@@ -335,7 +335,7 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
             className="font-headline font-bold text-primary"
             style={{ fontSize: 13 }}
           >
-            Intelligence Stream
+            Clerse
           </span>
           {data.parentNodeId && !minimized && (
             <span
@@ -469,7 +469,7 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
                       fontWeight: 600,
                     }}
                   >
-                    {msg.role === "user" ? "User" : "Claude"}:
+                    {msg.role === "user" ? "User" : "Clerse"}:
                   </span>
                   {getTextContent(msg.content).slice(0, 120)}
                   {getTextContent(msg.content).length > 120 ? "..." : ""}
@@ -848,7 +848,7 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
               onToggleFullscreen={() => setIsFullscreen(false)}
             />
             <span className="font-headline font-bold text-primary" style={{ fontSize: 13 }}>
-              Intelligence Stream
+              Clerse
             </span>
             <span
               className="font-label uppercase tracking-widest text-secondary/50 ml-2"

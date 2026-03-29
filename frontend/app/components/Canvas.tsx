@@ -385,7 +385,7 @@ function CanvasInner({ workspaceId }: CanvasProps) {
       case "claude":
         data = {
           kind: "claude",
-          label: "Claude",
+          label: "Clerse",
           conversationId: id,
           model: "claude-sonnet-4-6",
           initialMessages,

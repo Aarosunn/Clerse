@@ -10,8 +10,9 @@ import WindowControls from "./WindowControls";
 const ACCENT = "#d97706";
 
 const QUIZ_SYSTEM_PROMPT = `Generate quiz questions from the provided context.
-Respond ONLY with a valid JSON array. No preamble, no markdown.
-Format: [{"question": "...", "options": ["A", "B", "C", "D"], "correct_answer": "A", "explanation": "..."}]`;
+Respond ONLY with a valid JSON array. No preamble, no markdown fences.
+Each item: {"question": "...", "options": ["option text", "option text", "option text", "option text"], "correct_answer": "A", "explanation": "..."}
+The options array must contain 4 answer texts. correct_answer must be exactly one of: "A", "B", "C", or "D" — the letter matching the correct option by position.`;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function QuizNode({ id, data: rawData }: NodeProps<any>) {
@@ -26,7 +27,22 @@ export default function QuizNode({ id, data: rawData }: NodeProps<any>) {
   const [score, setScore] = useState(0);
   const [answered, setAnswered] = useState<Set<number>>(new Set());
   const streamRef = useRef("");
-  const { startConnect: startConnectMode } = useConnectMode();
+  const { startConnect: startConnectMode, workspaceId } = useConnectMode();
+
+  function normalizeCorrectAnswer(answer: string, options: string[]): string {
+    const trimmed = answer.trim();
+    // Already a single letter A-D
+    if (/^[A-D]$/i.test(trimmed)) return trimmed.toUpperCase();
+    // Starts with "A." / "A)" / "A " — extract the letter
+    const letterPrefix = trimmed.match(/^([A-D])[.):\s]/i);
+    if (letterPrefix) return letterPrefix[1].toUpperCase();
+    // Full option text — find matching index
+    const idx = options.findIndex(
+      (o) => o.trim().toLowerCase() === trimmed.toLowerCase()
+    );
+    if (idx >= 0) return String.fromCharCode(65 + idx);
+    return trimmed;
+  }
 
   function handleConnect() {
     if (questions.length === 0) return;
@@ -49,22 +65,41 @@ export default function QuizNode({ id, data: rawData }: NodeProps<any>) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        workspace_id: workspaceId,
+        node_id: id,
+        content: sourceText,
         model: "claude-haiku-4-5",
-        system: QUIZ_SYSTEM_PROMPT,
-        messages: [{ role: "user", content: [{ type: "text", text: sourceText }] }],
+        system_override: QUIZ_SYSTEM_PROMPT,
+        connected_node_ids: [],
       }),
     });
 
     const reader = res.body!.getReader();
     const decoder = new TextDecoder();
+    let buffer = "";
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-      streamRef.current += decoder.decode(value, { stream: true });
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+      for (const line of lines) {
+        if (!line.startsWith("data: ")) continue;
+        const raw = line.slice(6).trim();
+        if (!raw) continue;
+        try {
+          const event = JSON.parse(raw);
+          if (event.type === "token") streamRef.current += event.text as string;
+        } catch { /* skip */ }
+      }
     }
 
     try {
-      const parsed: QuizQuestion[] = JSON.parse(streamRef.current);
+      const raw = JSON.parse(streamRef.current) as QuizQuestion[];
+      const parsed = raw.map((q) => ({
+        ...q,
+        correct_answer: normalizeCorrectAnswer(q.correct_answer, q.options),
+      }));
       setQuestions(parsed);
       setCurrentIndex(0);
       setSelectedAnswer(null);

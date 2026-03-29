@@ -27,7 +27,7 @@ export default function PDFDocNode({ id, data: rawData }: NodeProps<any>) {
   const [minimized, setMinimized] = useState(false);
   const [editing, setEditing] = useState(false);
   const streamRef = useRef("");
-  const { startConnect: startConnectMode } = useConnectMode();
+  const { startConnect: startConnectMode, workspaceId } = useConnectMode();
 
   function handleConnect() {
     if (!markdown.trim()) return;
@@ -47,20 +47,36 @@ export default function PDFDocNode({ id, data: rawData }: NodeProps<any>) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        workspace_id: workspaceId,
+        node_id: id,
+        content: sourceText,
         model: "claude-sonnet-4-6",
-        system: PDFDOC_SYSTEM_PROMPT,
-        messages: [{ role: "user", content: [{ type: "text", text: sourceText }] }],
+        system_override: PDFDOC_SYSTEM_PROMPT,
+        connected_node_ids: [],
       }),
     });
 
     const reader = res.body!.getReader();
     const decoder = new TextDecoder();
+    let buffer = "";
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-      const chunk = decoder.decode(value, { stream: true });
-      streamRef.current += chunk;
-      setMarkdown(streamRef.current);
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+      for (const line of lines) {
+        if (!line.startsWith("data: ")) continue;
+        const raw = line.slice(6).trim();
+        if (!raw) continue;
+        try {
+          const event = JSON.parse(raw);
+          if (event.type === "token") {
+            streamRef.current += event.text as string;
+            setMarkdown(streamRef.current);
+          }
+        } catch { /* skip */ }
+      }
     }
 
     setGenerating(false);

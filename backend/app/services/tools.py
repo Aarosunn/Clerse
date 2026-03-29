@@ -112,14 +112,14 @@ TOOL_DEFINITIONS: list[dict] = [
     },
     {
         "name": "create_pdf_doc",
-        "description": "Generate a formatted document as a PDF doc node. Use LaTeX for the content.",
+        "description": "Generate a formatted document as a PDF doc node. Use Markdown + KaTeX for the content.",
         "input_schema": {
             "type": "object",
             "properties": {
                 "title": {"type": "string"},
                 "content": {
                     "type": "string",
-                    "description": "LaTeX document content",
+                    "description": "Markdown + KaTeX content",
                 },
             },
             "required": ["title", "content"],

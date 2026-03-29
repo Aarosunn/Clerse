@@ -64,6 +64,7 @@ async def _execute_create_branches(
             "type": "claude",
             "position": {"x": 400, "y": y_offset},
             "data": {"title": branch["title"]},
+            "style": NODE_SIZES["claude"],
         })
         edges.append({
             "id": f"edge-{uuid.uuid4()}",
@@ -106,7 +107,13 @@ async def _execute_create_markdown(
     ))
     await db.commit()
     return {
-        "nodes": [_make_node(node_id, "artifact", input["title"])],
+        "nodes": [{
+            "id": node_id,
+            "type": "pdfdoc",
+            "position": {"x": 400, "y": 0},
+            "data": {"title": input["title"], "markdown": input["content"]},
+            "style": NODE_SIZES["pdfdoc"],
+        }],
         "edges": [_make_edge(source_node_id, node_id)],
     }
 
@@ -132,6 +139,7 @@ async def _execute_generate_flashcards(
             "type": "flashcard",
             "position": {"x": 400, "y": 0},
             "data": {"title": input["title"], "cards": input["cards"]},
+            "style": NODE_SIZES["flashcard"],
         }],
         "edges": [_make_edge(source_node_id, node_id)],
     }
@@ -153,7 +161,13 @@ async def _execute_generate_quiz(
     ))
     await db.commit()
     return {
-        "nodes": [_make_node(node_id, "quiz", input["title"])],
+        "nodes": [{
+            "id": node_id,
+            "type": "quiz",
+            "position": {"x": 400, "y": 0},
+            "data": {"title": input["title"], "questions": input["questions"]},
+            "style": NODE_SIZES["quiz"],
+        }],
         "edges": [_make_edge(source_node_id, node_id)],
     }
 
@@ -174,17 +188,33 @@ async def _execute_create_pdf_doc(
     ))
     await db.commit()
     return {
-        "nodes": [_make_node(node_id, "pdf_doc", input["title"])],
+        "nodes": [{
+            "id": node_id,
+            "type": "pdfdoc",
+            "position": {"x": 400, "y": 0},
+            "data": {"title": input["title"], "markdown": input["content"]},
+        }],
         "edges": [_make_edge(source_node_id, node_id)],
     }
 
 
+NODE_SIZES: dict[str, dict] = {
+    "claude":    {"width": 480, "height": 520},
+    "flashcard": {"width": 340, "height": 380},
+    "quiz":      {"width": 340, "height": 420},
+    "pdfdoc":    {"width": 340, "height": 400},
+    "artifact":  {"width": 340, "height": 400},
+}
+
+
 def _make_node(node_id: str, node_type: str, title: str) -> dict:
+    size = NODE_SIZES.get(node_type, {"width": 340, "height": 360})
     return {
         "id": node_id,
         "type": node_type,
         "position": {"x": 400, "y": 0},
         "data": {"title": title},
+        "style": size,
     }
 
 
@@ -193,4 +223,5 @@ def _make_edge(source: str, target: str) -> dict:
         "id": f"edge-{uuid.uuid4()}",
         "source": source,
         "target": target,
+        "type": "river",
     }
