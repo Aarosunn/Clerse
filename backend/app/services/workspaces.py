@@ -55,6 +55,6 @@ async def get_node_messages(
     result = await db.execute(
         select(Message)
         .where(Message.workspace_id == workspace_id, Message.node_id == node_id)
-        .order_by(Message.created_at)
+        .order_by(Message.created_at, Message.id)
     )
     return list(result.scalars().all())
