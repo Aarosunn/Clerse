@@ -135,7 +135,8 @@ export default function YouTubeNode({ id, data: rawData }: NodeProps<any>) {
             </button>
           </>
         )}
-      </div>}
+        </div>
+      )}
 
       <Handle type="source" position={Position.Bottom} />
     </div>

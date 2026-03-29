@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Manrope, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
+import "katex/dist/katex.min.css";
 
 const manrope = Manrope({
   subsets: ["latin"],

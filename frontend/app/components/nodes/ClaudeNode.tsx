@@ -365,8 +365,13 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
               <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0 mt-0.5">
                 <SparkleIcon size={14} className="text-white" />
               </div>
-              <div className="font-body text-sm text-on-surface leading-relaxed flex-1">
-                {streamText}
+              <div className="font-body text-sm text-on-surface leading-relaxed flex-1 prose prose-sm max-w-none">
+                <ReactMarkdown
+                  remarkPlugins={[remarkMath]}
+                  rehypePlugins={[rehypeKatex]}
+                >
+                  {streamText}
+                </ReactMarkdown>
                 <span
                   className="inline-block w-0.5 h-3.5 align-middle ml-0.5 animate-pulse"
                   style={{ background: "#00668a" }}
