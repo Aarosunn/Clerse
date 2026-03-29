@@ -30,6 +30,7 @@ import YouTubeNode from "./nodes/YouTubeNode";
 import ArticleNode from "./nodes/ArticleNode";
 import ImageNode from "./nodes/ImageNode";
 import FlashcardNode from "./nodes/FlashcardNode";
+import TextNode from "./nodes/TextNode";
 import RiverEdge from "./edges/RiverEdge";
 import {
   SparkleIcon,
@@ -38,6 +39,7 @@ import {
   ArticleIcon as ArticleIconComponent,
   ImageIcon as ImageIconComponent,
   FlashcardIcon,
+  TextIcon as TextIconComponent,
 } from "./Icons";
 
 /* ── Connect mode context ── */
@@ -73,6 +75,8 @@ const nodeTypes: NodeTypes = {
   image: ImageNode as any,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   flashcard: FlashcardNode as any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  text: TextNode as any,
 };
 
 const edgeTypes: EdgeTypes = {
@@ -333,6 +337,9 @@ function CanvasInner({ workspaceId }: CanvasProps) {
       case "flashcard":
         data = { kind: "flashcard", label: "Flashcards", cards: [], sourceNodeId: "" };
         break;
+      case "text":
+        data = { kind: "text", label: "Text", content: "" };
+        break;
     }
 
     addNodes({ id, type: kind, position: pos, data: data as Record<string, unknown>, style: { width: kind === "claude" ? 480 : 340 } });
@@ -364,6 +371,7 @@ function CanvasInner({ workspaceId }: CanvasProps) {
     article: "#4a7c59",
     image: "#7b5ea7",
     flashcard: "#c89b3c",
+    text: "#6d7981",
   };
 
   /* ── Connection line: compute source screen position ── */
@@ -543,6 +551,7 @@ function CanvasInner({ workspaceId }: CanvasProps) {
               {draggingNodeType === "article" && <ArticleIconComponent size={28} />}
               {draggingNodeType === "image" && <ImageIconComponent size={28} />}
               {draggingNodeType === "flashcard" && <FlashcardIcon size={28} />}
+              {draggingNodeType === "text" && <TextIconComponent size={28} />}
             </div>
           </div>
         )}
