@@ -109,25 +109,70 @@ void main() {
   float waterDepth = shoreline - uv.y;
   float inWater = smoothstep(-0.005, 0.01, waterDepth);
 
-  // ─── Foam — single clean white edge ───
-  float foam = smoothstep(-0.006, 0.004, waterDepth) * (1.0 - smoothstep(0.004, 0.08, waterDepth));
+  // ─── Downward flow: visible current in water ───
+  // Layered noise that scrolls top→bottom to show water direction
+  float flow1 = snoise(vec2(uv.x * 4.0, uv.y * 3.0 - uTime * uSpeed * 0.35)) * 0.5 + 0.5;
+  float flow2 = snoise(vec2(uv.x * 8.0 + 3.0, uv.y * 5.0 - uTime * uSpeed * 0.5)) * 0.5 + 0.5;
+  float flow3 = snoise(vec2(uv.x * 2.5 - 1.0, uv.y * 2.0 - uTime * uSpeed * 0.2 + 7.0)) * 0.5 + 0.5;
+  float flowPattern = flow1 * 0.5 + flow2 * 0.3 + flow3 * 0.2;
 
-  // Wet sand — subtle darkening just below waterline
-  float wetSand = smoothstep(0.0, 0.05, -waterDepth) * (1.0 - smoothstep(0.05, 0.12, -waterDepth));
+  // ─── Foam — wider, stronger shoreline foam ───
+  // Primary foam band at the water's edge
+  float foamEdge = smoothstep(-0.008, 0.006, waterDepth) * (1.0 - smoothstep(0.006, 0.14, waterDepth));
+  // Secondary softer foam that reaches further into the water
+  float foamWide = smoothstep(-0.003, 0.02, waterDepth) * (1.0 - smoothstep(0.02, 0.22, waterDepth));
+  // Foam breakup noise for natural look
+  float foamNoise = snoise(vec2(uv.x * 12.0 + uTime * 0.3, uv.y * 8.0 - uTime * uSpeed * 0.2)) * 0.5 + 0.5;
+  float foamNoise2 = snoise(vec2(uv.x * 20.0 - uTime * 0.15, uv.y * 14.0 - uTime * uSpeed * 0.25 + 3.0)) * 0.5 + 0.5;
+  // Combined foam: strong edge + noisy wider band
+  float foam = foamEdge * 0.9 + foamWide * foamNoise * 0.5 + foamWide * foamNoise2 * 0.2;
+  foam = clamp(foam, 0.0, 1.0);
 
-  // ─── Water color: smooth shallow → deep ───
+  // ─── Whitecaps: rare, tiny specks in deeper water ───
+  float capNoise = snoise(vec2(uv.x * 35.0 + uTime * 0.08, uv.y * 25.0 - uTime * uSpeed * 0.35));
+  float whitecaps = smoothstep(0.74, 0.88, capNoise) * smoothstep(0.12, 0.30, waterDepth) * 0.12;
+
+  // ─── Wet Sand Trail: Darkened spots where water receded ───
+  // Approximate maximum reach of the combined waves
+  float maxWaveReach = 0.06;
+  float shorelineMax = shoreCenter + n1 + n2 + maxWaveReach;
+
+  // Track the distance from the current water edge onto the sand
+  float distToWater = -waterDepth;           // positive on sand side
+  float distToBase = shorelineMax - uv.y;    // positive up to the max wave reach
+  float inWetZone = step(0.0, distToWater) * step(0.0, distToBase);
+
+  // The wet mark fades as it gets further from the current water line (drying effect)
+  float recedeDistance = max(shorelineMax - shoreline, 0.001);
+  float wetFade = 1.0 - smoothstep(0.0, recedeDistance, distToWater);
+  wetFade = pow(wetFade, 1.5); // non-linear fade for more realistic drying
+
+  // Add noise to make the sand look porous and naturally drying in patches
+  float wetNoise = snoise(vec2(uv.x * 20.0, uv.y * 20.0 - uTime * 0.1)) * 0.5 + 0.5;
+  wetFade *= mix(0.6, 1.0, wetNoise);
+
+  float wetSandArea = inWetZone * wetFade;
+
+  // ─── Water color: shallow → deep with visible flow ───
   float depthNorm = smoothstep(0.0, 0.45, waterDepth);
   vec3 waterColor = mix(uColorShallow, uColorDeep, depthNorm);
+  // Modulate water color with flow pattern to show current direction
+  vec3 flowHighlight = mix(waterColor, uColorShallow, 0.25);
+  waterColor = mix(waterColor, flowHighlight, flowPattern * inWater * 0.4);
 
   // ─── Sand: clean flat color ───
   vec3 sandColor = uColorSand;
-  vec3 wetSandColor = sandColor * 0.82;
 
   // ─── Compositing ───
   vec3 color = sandColor;
-  color = mix(color, wetSandColor, wetSand * 0.6);
+
+  // Wet sand is a softened, darker yellow version of the base sand color
+  vec3 wetSandColor = sandColor * vec3(0.90, 0.85, 0.75); // Less harsh darkening, keeps it yellow
+  color = mix(color, wetSandColor, wetSandArea);
+
   color = mix(color, waterColor, inWater);
-  color = mix(color, vec3(1.0), foam * 0.7);
+  color = mix(color, vec3(1.0), foam * 0.85);
+  color = mix(color, vec3(1.0), whitecaps * inWater);
 
   gl_FragColor = vec4(color, 1.0);
 }

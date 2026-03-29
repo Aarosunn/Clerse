@@ -568,6 +568,8 @@ function CanvasInner({ workspaceId }: CanvasProps) {
               nodeColor={(n) => NODE_COLORS[n.type ?? "claude"] ?? "#476083"}
               position="bottom-right"
               style={{ marginBottom: 100 }}
+              pannable
+              zoomable
             />
           </ReactFlow>
         </div>

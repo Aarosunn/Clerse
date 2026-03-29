@@ -1,11 +1,20 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import {
   ArrowForwardIcon,
 } from "./components/Icons";
-import BeachWaveBackground from "./components/BeachWaveBackground";
-import SplitText from "./components/SplitText";
+
+const BeachWaveBackground = dynamic(
+  () => import("./components/BeachWaveBackground"),
+  { ssr: false }
+);
+
+const SplitText = dynamic(
+  () => import("./components/SplitText"),
+  { ssr: false }
+);
 
 
 /* ── Minimal Material Symbol icons for landing page ── */
@@ -87,18 +96,7 @@ export default function LandingPage() {
           </span>
         </div>
 
-        {/* Center: Links */}
-        <div className="hidden md:flex items-center gap-8">
-          {["Manifesto", "Gallery", "Community"].map((link) => (
-            <a
-              key={link}
-              href="#"
-              className="font-label text-sm text-white/70 hover:text-white transition-colors uppercase tracking-widest"
-            >
-              {link}
-            </a>
-          ))}
-        </div>
+        {/* Center: Links (Removed) */}
 
         {/* Right: Actions */}
         <div className="flex items-center gap-4">
