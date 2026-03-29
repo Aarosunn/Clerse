@@ -1,5 +1,6 @@
 # tests/test_workspaces.py
 import uuid
+from datetime import datetime, timezone, timedelta
 
 import pytest
 
@@ -111,7 +112,8 @@ async def test_get_messages_ordered_by_created_at(client, workspace, db):
     node_id = "node-abc"
     msg1 = Message(
         workspace_id=workspace.id, node_id=node_id,
-        role="user", content="Hello"
+        role="user", content="Hello",
+        created_at=datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
     )
     db.add(msg1)
     await db.commit()
@@ -119,7 +121,8 @@ async def test_get_messages_ordered_by_created_at(client, workspace, db):
 
     msg2 = Message(
         workspace_id=workspace.id, node_id=node_id,
-        role="assistant", content="Hi there"
+        role="assistant", content="Hi there",
+        created_at=datetime(2024, 1, 1, 12, 0, 1, tzinfo=timezone.utc)
     )
     db.add(msg2)
     await db.commit()
