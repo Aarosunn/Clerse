@@ -37,3 +37,20 @@ class WorkspaceUpdatedResponse(BaseModel):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class ChatRequest(BaseModel):
+    workspace_id: uuid.UUID
+    node_id: str
+    content: str
+    model: str = "claude-sonnet-4-6"
+    connected_node_ids: list[str] = []
+
+
+class MessageResponse(BaseModel):
+    id: uuid.UUID
+    role: str
+    content: str | None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
