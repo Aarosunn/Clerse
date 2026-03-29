@@ -2,26 +2,276 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block');
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  color-scheme: light;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: #fcf9f4;
+  color: #1c1c19;
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
+/* Material Symbols icon font */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  user-select: none;
+  line-height: 1;
+}
+
+/* DESIGN.md — organic wave backdrop */
+.japanese-line-wave-bg {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='200' viewBox='0 0 800 200'%3E%3Cg fill='none' stroke='%23476083' stroke-width='0.5' stroke-opacity='0.1'%3E%3Cpath d='M-100 100 Q 100 50 300 100 T 700 100 T 1100 100'/%3E%3Cpath d='M-100 120 Q 100 70 300 120 T 700 120 T 1100 120'/%3E%3Cpath d='M-100 140 Q 100 90 300 140 T 700 140 T 1100 140'/%3E%3Cpath d='M-100 160 Q 100 110 300 160 T 700 160 T 1100 160'/%3E%3Cpath d='M-100 180 Q 100 130 300 180 T 700 180 T 1100 180'/%3E%3C/g%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-position: center;
+}
+
+/* Landing page wave background */
+.wave-background {
+  background-color: #fcf9f4;
+  background-image: url("data:image/svg+xml,%3Csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='wave' x='0' y='0' width='120' height='40' patternUnits='userSpaceOnUse'%3E%3Cpath d='M0 20 Q 30 10, 60 20 T 120 20' fill='none' stroke='%23bcc8d1' stroke-width='1.5' opacity='0.15'/%3E%3C/pattern%3E%3C/defs%3E%3Crect x='0' y='0' width='100%25' height='100%25' fill='url(%23wave)'/%3E%3C/svg%3E");
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+/* DESIGN.md — ambient depth, no harsh shadows */
+.editorial-shadow {
+  box-shadow: 0 12px 40px rgba(28, 28, 25, 0.06);
+}
+
+/* DESIGN.md — Layer 3 glassmorphism for floating toolbars */
+.glass {
+  background-color: rgba(252, 249, 244, 0.7) !important;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+/* DESIGN.md — fade-and-scale entry transitions */
+@keyframes fadeScale {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.animate-fade-scale {
+  animation: fadeScale 200ms ease forwards;
+}
+
+/* NAVY_ACCENTED_DESIGN.md — canvas dot grid */
+.canvas-grid {
+  background-image: radial-gradient(#d8d2c6 1.5px, transparent 0);
+  background-size: 32px 32px;
+}
+
+/* NAVY_ACCENTED_DESIGN.md — animated river flows */
+.river-path {
+  stroke-dasharray: 200;
+  stroke-dashoffset: 200;
+  animation: flow 10s linear infinite;
+}
+@keyframes flow {
+  to { stroke-dashoffset: 0; }
+}
+
+/* React Flow — transparent bg so custom canvas shows through */
+.react-flow__renderer {
+  background: transparent !important;
+}
+.react-flow {
+  background: transparent !important;
+}
+
+/* React Flow — oceanic handle + edge styles */
+.react-flow__node {
+  box-shadow: none !important;
+}
+.react-flow__edge-path {
+  stroke: #bcc8d1;
+  stroke-width: 1.5;
+}
+.react-flow__handle {
+  background: #476083 !important;
+  border: 2px solid #fcf9f4 !important;
+  width: 10px !important;
+  height: 10px !important;
+  border-radius: 50% !important;
+}
+.react-flow__controls {
+  background: rgba(255, 255, 255, 0.7) !important;
+  backdrop-filter: blur(24px);
+  border-radius: 0.5rem !important;
+  box-shadow: 0 12px 40px rgba(28, 28, 25, 0.06) !important;
+  border: 1px solid rgba(188, 200, 209, 0.2) !important;
+}
+.react-flow__controls-button {
+  background: transparent !important;
+  border: none !important;
+  border-bottom: none !important;
+  color: #476083;
+}
+.react-flow__controls-button:hover {
+  background: rgba(71, 96, 131, 0.08) !important;
+}
+.react-flow__minimap {
+  border-radius: 0.5rem !important;
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(28, 28, 25, 0.06) !important;
+  border: 1px solid rgba(188, 200, 209, 0.15) !important;
+}
+.react-flow__panel {
+  border: none !important;
+}
+
+/* NodeResizer handle color */
+.react-flow__resize-control.handle {
+  background: #476083 !important;
+  border-color: #ffffff !important;
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 50% !important;
+}
+.react-flow__resize-control.line {
+  border-color: rgba(71, 96, 131, 0.3) !important;
+}
+
+/* Markdown/Prose styling for Claude responses */
+.prose {
+  color: #1c1c19;
+}
+.prose strong {
+  color: #1c1c19;
+  font-weight: 700;
+}
+.prose em {
+  font-style: italic;
+}
+.prose code {
+  background: rgba(71, 96, 131, 0.08);
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-size: 0.875em;
+  font-family: 'Courier New', monospace;
+  color: #00668a;
+}
+.prose pre {
+  background: rgba(71, 96, 131, 0.04);
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  border: 1px solid rgba(188, 200, 209, 0.2);
+}
+.prose pre code {
+  background: transparent;
+  padding: 0;
+  color: #1c1c19;
+}
+.prose a {
+  color: #00668a;
+  text-decoration: underline;
+  text-decoration-color: rgba(0, 102, 138, 0.3);
+  transition: text-decoration-color 0.2s;
+}
+.prose a:hover {
+  text-decoration-color: #00668a;
+}
+.prose ul, .prose ol {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+.prose li {
+  margin: 0.25rem 0;
+}
+.prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
+  color: #476083;
+  font-weight: 700;
+  margin: 1rem 0 0.5rem;
+}
+.prose p {
+  margin: 0.5rem 0;
+}
+
+/* Landing page — Floating sidebar */
+.floating-sidebar {
+  position: fixed;
+  left: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.70);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-radius: 9999px;
+  padding: 24px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  box-shadow: 0 12px 40px rgba(28, 28, 25, 0.06);
+  z-index: 50;
+}
+
+/* Landing page — CTA buttons */
+.cta-primary {
+  background: #a43c12;
+  color: white;
+  font-family: var(--font-plus-jakarta-sans), sans-serif;
+  font-weight: 600;
+  padding: 16px 32px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 12px 24px rgba(164, 60, 18, 0.2);
+  transition: transform 0.2s, filter 0.2s;
+}
+
+.cta-primary:hover {
+  filter: brightness(1.1);
+}
+
+.cta-secondary {
+  background: rgba(188, 200, 209, 0.15);
+  color: #476083;
+  font-family: var(--font-plus-jakarta-sans), sans-serif;
+  font-weight: 600;
+  padding: 16px 32px;
+  border-radius: 9999px;
+  border: 1px solid rgba(188, 200, 209, 0.3);
+  transition: background 0.2s;
+}
+
+.cta-secondary:hover {
+  background: rgba(188, 200, 209, 0.25);
+}
+
+/* Node drag preview — pop animation and float */
+@keyframes nodePop {
+  0% {
+    transform: scale(0.5) rotate(-10deg);
+    opacity: 0;
   }
+  50% {
+    transform: scale(1.15) rotate(5deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+.node-drag-preview {
+  animation: nodePop 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  pointer-events: none;
+  position: fixed;
+  z-index: 9999;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.node-drag-preview::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.15;
+  filter: blur(8px);
+  z-index: -1;
 }
