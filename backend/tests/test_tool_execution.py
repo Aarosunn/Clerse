@@ -18,6 +18,8 @@ async def test_execute_suggest_branch(workspace, db):
     )
     assert result["title"] == "CNNs"
     assert result["reason"] == "dive deeper"
+    assert result["nodes"] == []
+    assert result["edges"] == []
     # No DB writes
     branches = list((await db.execute(select(Branch))).scalars().all())
     assert len(branches) == 0

@@ -22,7 +22,7 @@ async def execute_tool(
     if name == "create_branches":
         return await _execute_create_branches(input, workspace_id, source_node_id, db)
     if name == "suggest_branch":
-        return {"title": input["title"], "reason": input["reason"]}
+        return {"title": input["title"], "reason": input["reason"], "nodes": [], "edges": []}
     if name == "create_markdown":
         return await _execute_create_markdown(input, workspace_id, source_node_id, db)
     if name == "generate_flashcards":

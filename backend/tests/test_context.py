@@ -6,68 +6,68 @@ from app.services.context import get_node_messages, get_node_file, find_node_in_
 
 
 @pytest.mark.asyncio
-async def test_get_node_messages_empty(db_session):
+async def test_get_node_messages_empty(db):
     ws = Workspace(title="WS")
-    db_session.add(ws)
-    await db_session.commit()
-    await db_session.refresh(ws)
+    db.add(ws)
+    await db.commit()
+    await db.refresh(ws)
 
-    msgs = await get_node_messages(ws.id, "node-1", db_session)
+    msgs = await get_node_messages(ws.id, "node-1", db)
     assert msgs == []
 
 
 @pytest.mark.asyncio
-async def test_get_node_messages_returns_in_order(db_session):
+async def test_get_node_messages_returns_in_order(db):
     ws = Workspace(title="WS")
-    db_session.add(ws)
-    await db_session.commit()
-    await db_session.refresh(ws)
+    db.add(ws)
+    await db.commit()
+    await db.refresh(ws)
 
     m1 = Message(workspace_id=ws.id, node_id="node-1", role="user", content="hello")
     m2 = Message(workspace_id=ws.id, node_id="node-1", role="assistant", content="hi")
-    db_session.add_all([m1, m2])
-    await db_session.commit()
+    db.add_all([m1, m2])
+    await db.commit()
 
-    msgs = await get_node_messages(ws.id, "node-1", db_session)
+    msgs = await get_node_messages(ws.id, "node-1", db)
     assert len(msgs) == 2
     assert msgs[0].role == "user"
     assert msgs[1].role == "assistant"
 
 
 @pytest.mark.asyncio
-async def test_get_node_messages_only_own_node(db_session):
+async def test_get_node_messages_only_own_node(db):
     ws = Workspace(title="WS")
-    db_session.add(ws)
-    await db_session.commit()
-    await db_session.refresh(ws)
+    db.add(ws)
+    await db.commit()
+    await db.refresh(ws)
 
     m1 = Message(workspace_id=ws.id, node_id="node-1", role="user", content="mine")
     m2 = Message(workspace_id=ws.id, node_id="node-2", role="user", content="other")
-    db_session.add_all([m1, m2])
-    await db_session.commit()
+    db.add_all([m1, m2])
+    await db.commit()
 
-    msgs = await get_node_messages(ws.id, "node-1", db_session)
+    msgs = await get_node_messages(ws.id, "node-1", db)
     assert len(msgs) == 1
     assert msgs[0].content == "mine"
 
 
 @pytest.mark.asyncio
-async def test_get_node_file_not_found(db_session):
+async def test_get_node_file_not_found(db):
     ws = Workspace(title="WS")
-    db_session.add(ws)
-    await db_session.commit()
-    await db_session.refresh(ws)
+    db.add(ws)
+    await db.commit()
+    await db.refresh(ws)
 
-    result = await get_node_file(ws.id, "node-x", db_session)
+    result = await get_node_file(ws.id, "node-x", db)
     assert result is None
 
 
 @pytest.mark.asyncio
-async def test_get_node_file_found(db_session):
+async def test_get_node_file_found(db):
     ws = Workspace(title="WS")
-    db_session.add(ws)
-    await db_session.commit()
-    await db_session.refresh(ws)
+    db.add(ws)
+    await db.commit()
+    await db.refresh(ws)
 
     f = File(
         workspace_id=ws.id,
@@ -76,10 +76,10 @@ async def test_get_node_file_found(db_session):
         content_type="application/pdf",
         content_text="page 1 text",
     )
-    db_session.add(f)
-    await db_session.commit()
+    db.add(f)
+    await db.commit()
 
-    result = await get_node_file(ws.id, "node-pdf", db_session)
+    result = await get_node_file(ws.id, "node-pdf", db)
     assert result is not None
     assert result.content_text == "page 1 text"
 
@@ -115,22 +115,22 @@ def test_find_node_handles_empty_nodes():
 # --- assemble_context: minimal chat-only case ---
 
 @pytest.mark.asyncio
-async def test_assemble_context_chat_only(db_session):
+async def test_assemble_context_chat_only(db):
     canvas = {
         "nodes": [{"id": "node-1", "type": "chat", "data": {"skill": "Default"}}],
         "edges": [],
     }
     ws = Workspace(title="WS", canvas_state=canvas)
-    db_session.add(ws)
-    await db_session.commit()
-    await db_session.refresh(ws)
+    db.add(ws)
+    await db.commit()
+    await db.refresh(ws)
 
     m = Message(workspace_id=ws.id, node_id="node-1", role="user", content="hello")
-    db_session.add(m)
-    await db_session.commit()
+    db.add(m)
+    await db.commit()
 
     system, messages, truncated = await assemble_context(
-        ws.id, "node-1", connected_node_ids=[], db=db_session
+        ws.id, "node-1", connected_node_ids=[], db=db
     )
 
     assert "helpful AI assistant" in system
@@ -141,25 +141,25 @@ async def test_assemble_context_chat_only(db_session):
 
 
 @pytest.mark.asyncio
-async def test_assemble_context_uses_skill_prompt(db_session):
+async def test_assemble_context_uses_skill_prompt(db):
     canvas = {
         "nodes": [{"id": "node-1", "type": "chat", "data": {"skill": "Tutor"}}],
         "edges": [],
     }
     ws = Workspace(title="WS", canvas_state=canvas)
-    db_session.add(ws)
-    await db_session.commit()
-    await db_session.refresh(ws)
+    db.add(ws)
+    await db.commit()
+    await db.refresh(ws)
 
     system, messages, truncated = await assemble_context(
-        ws.id, "node-1", connected_node_ids=[], db=db_session
+        ws.id, "node-1", connected_node_ids=[], db=db
     )
 
     assert "tutor" in system.lower()
 
 
 @pytest.mark.asyncio
-async def test_assemble_context_injects_text_node_into_system(db_session):
+async def test_assemble_context_injects_text_node_into_system(db):
     canvas = {
         "nodes": [
             {"id": "node-chat", "type": "chat", "data": {"skill": "Default"}},
@@ -168,9 +168,9 @@ async def test_assemble_context_injects_text_node_into_system(db_session):
         "edges": [],
     }
     ws = Workspace(title="WS", canvas_state=canvas)
-    db_session.add(ws)
-    await db_session.commit()
-    await db_session.refresh(ws)
+    db.add(ws)
+    await db.commit()
+    await db.refresh(ws)
 
     f = File(
         workspace_id=ws.id,
@@ -178,11 +178,11 @@ async def test_assemble_context_injects_text_node_into_system(db_session):
         content_type="text/plain",
         content_text="important reference content",
     )
-    db_session.add(f)
-    await db_session.commit()
+    db.add(f)
+    await db.commit()
 
     system, messages, truncated = await assemble_context(
-        ws.id, "node-chat", connected_node_ids=["node-text"], db=db_session
+        ws.id, "node-chat", connected_node_ids=["node-text"], db=db
     )
 
     assert "important reference content" in system
@@ -190,7 +190,7 @@ async def test_assemble_context_injects_text_node_into_system(db_session):
 
 
 @pytest.mark.asyncio
-async def test_assemble_context_merges_linked_chat_messages(db_session):
+async def test_assemble_context_merges_linked_chat_messages(db):
     canvas = {
         "nodes": [
             {"id": "node-a", "type": "chat", "data": {}},
@@ -199,17 +199,17 @@ async def test_assemble_context_merges_linked_chat_messages(db_session):
         "edges": [],
     }
     ws = Workspace(title="WS", canvas_state=canvas)
-    db_session.add(ws)
-    await db_session.commit()
-    await db_session.refresh(ws)
+    db.add(ws)
+    await db.commit()
+    await db.refresh(ws)
 
     m_a = Message(workspace_id=ws.id, node_id="node-a", role="user", content="from a")
     m_b = Message(workspace_id=ws.id, node_id="node-b", role="user", content="from b")
-    db_session.add_all([m_a, m_b])
-    await db_session.commit()
+    db.add_all([m_a, m_b])
+    await db.commit()
 
     system, messages, truncated = await assemble_context(
-        ws.id, "node-b", connected_node_ids=["node-a"], db=db_session
+        ws.id, "node-b", connected_node_ids=["node-a"], db=db
     )
 
     contents = [m["content"] for m in messages]
@@ -218,7 +218,7 @@ async def test_assemble_context_merges_linked_chat_messages(db_session):
 
 
 @pytest.mark.asyncio
-async def test_assemble_context_prepends_image_block(db_session):
+async def test_assemble_context_prepends_image_block(db):
     canvas = {
         "nodes": [
             {"id": "node-chat", "type": "chat", "data": {}},
@@ -227,9 +227,9 @@ async def test_assemble_context_prepends_image_block(db_session):
         "edges": [],
     }
     ws = Workspace(title="WS", canvas_state=canvas)
-    db_session.add(ws)
-    await db_session.commit()
-    await db_session.refresh(ws)
+    db.add(ws)
+    await db.commit()
+    await db.refresh(ws)
 
     f = File(
         workspace_id=ws.id,
@@ -238,11 +238,11 @@ async def test_assemble_context_prepends_image_block(db_session):
         file_data="base64encodeddata==",
     )
     m = Message(workspace_id=ws.id, node_id="node-chat", role="user", content="describe this")
-    db_session.add_all([f, m])
-    await db_session.commit()
+    db.add_all([f, m])
+    await db.commit()
 
     system, messages, truncated = await assemble_context(
-        ws.id, "node-chat", connected_node_ids=["node-img"], db=db_session
+        ws.id, "node-chat", connected_node_ids=["node-img"], db=db
     )
 
     # First user message content should be a list with image block + text block
@@ -254,7 +254,7 @@ async def test_assemble_context_prepends_image_block(db_session):
 
 
 @pytest.mark.asyncio
-async def test_assemble_context_truncates_linked_messages(db_session):
+async def test_assemble_context_truncates_linked_messages(db):
     canvas = {
         "nodes": [
             {"id": "node-a", "type": "chat", "data": {}},
@@ -263,18 +263,18 @@ async def test_assemble_context_truncates_linked_messages(db_session):
         "edges": [],
     }
     ws = Workspace(title="WS", canvas_state=canvas)
-    db_session.add(ws)
-    await db_session.commit()
-    await db_session.refresh(ws)
+    db.add(ws)
+    await db.commit()
+    await db.refresh(ws)
 
     # Add 80 messages to linked node-a and 80 to own node-b → total 160 > 150
     for i in range(80):
-        db_session.add(Message(workspace_id=ws.id, node_id="node-a", role="user", content=f"a{i}"))
-        db_session.add(Message(workspace_id=ws.id, node_id="node-b", role="user", content=f"b{i}"))
-    await db_session.commit()
+        db.add(Message(workspace_id=ws.id, node_id="node-a", role="user", content=f"a{i}"))
+        db.add(Message(workspace_id=ws.id, node_id="node-b", role="user", content=f"b{i}"))
+    await db.commit()
 
     system, messages, truncated = await assemble_context(
-        ws.id, "node-b", connected_node_ids=["node-a"], db=db_session
+        ws.id, "node-b", connected_node_ids=["node-a"], db=db
     )
 
     assert truncated is True
