@@ -86,3 +86,12 @@ class ExtractYouTubeResponse(BaseModel):
 class ExtractArticleResponse(BaseModel):
     text: str
     title: str
+
+
+class FileUploadResponse(BaseModel):
+    file_id: uuid.UUID
+    node_id: str
+    filename: str
+    content_type: str
+
+    model_config = {"from_attributes": True}
