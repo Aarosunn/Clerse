@@ -44,12 +44,14 @@ import {
 interface ConnectContextValue {
   connectingFrom: string | null;
   cachedMessages: Message[] | null;
-  startConnect: (nodeId: string, messages?: Message[]) => void;
+  connectionOrigin: { x: number; y: number } | null;
+  startConnect: (nodeId: string, messages?: Message[], origin?: { x: number; y: number }) => void;
 }
 
 export const ConnectContext = createContext<ConnectContextValue>({
   connectingFrom: null,
   cachedMessages: null,
+  connectionOrigin: null,
   startConnect: () => {},
 });
 
@@ -88,41 +90,53 @@ function WavyConnectionLine({ sourceX, sourceY, targetX, targetY }: {
   const uy = len > 0 ? dy / len : 0;
   const nx = -uy;
   const ny = ux;
-  const segments = 48;
 
-  const layers = [
-    { amplitude: 8, phase: 0, color: "#00BFFF", opacity: 0.6, width: 2 },
-    { amplitude: 5, phase: 2.1, color: "#476083", opacity: 0.3, width: 1.2 },
-  ];
+  const pathRef = useRef<SVGPathElement>(null);
+
+  useEffect(() => {
+    let animationFrameId: number;
+    let startTime = performance.now();
+
+    const animate = (time: number) => {
+      const elapsedTime = time - startTime;
+      const phase = (elapsedTime / 1000) * -1.5;
+
+      const points: string[] = [];
+      for (let i = 0; i <= 64; i++) {
+        const t = i / 64;
+        const baseX = sourceX + dx * t;
+        const baseY = sourceY + dy * t;
+        const wave = Math.sin(t * 2.5 * Math.PI * 2 + phase) * 15;
+        const taper = Math.sin(t * Math.PI);
+        const px = baseX + nx * wave * taper;
+        const py = baseY + ny * wave * taper;
+        points.push(i === 0 ? `M ${px} ${py}` : `L ${px} ${py}`);
+      }
+
+      if (pathRef.current) {
+        pathRef.current.setAttribute("d", points.join(" "));
+      }
+
+      animationFrameId = requestAnimationFrame(animate);
+    };
+
+    animationFrameId = requestAnimationFrame(animate);
+
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [sourceX, sourceY, dx, dy, nx, ny]);
 
   return (
-    <>
-      {layers.map((layer, li) => {
-        const points: string[] = [];
-        for (let i = 0; i <= segments; i++) {
-          const t = i / segments;
-          const baseX = sourceX + dx * t;
-          const baseY = sourceY + dy * t;
-          const wave = Math.sin(t * 1.5 * Math.PI * 2 + layer.phase) * layer.amplitude;
-          const taper = Math.sin(t * Math.PI);
-          const px = baseX + nx * wave * taper;
-          const py = baseY + ny * wave * taper;
-          points.push(i === 0 ? `M ${px} ${py}` : `L ${px} ${py}`);
-        }
-        return (
-          <path
-            key={li}
-            d={points.join(" ")}
-            fill="none"
-            stroke={layer.color}
-            strokeWidth={layer.width}
-            strokeOpacity={layer.opacity}
-            strokeLinecap="round"
-            strokeDasharray="8 4"
-          />
-        );
-      })}
-    </>
+    <path
+      ref={pathRef}
+      fill="none"
+      stroke="#00BFFF"
+      strokeWidth={6}
+      strokeOpacity={0.8}
+      strokeLinecap="round"
+      style={{
+        filter: "drop-shadow(0 0 4px rgba(0,191,255,0.7))",
+      }}
+    />
   );
 }
 
@@ -141,13 +155,16 @@ function CanvasInner({ workspaceId }: CanvasProps) {
   const [cachedMessages, setCachedMessages] = useState<Message[] | null>(null);
   const [mouseScreen, setMouseScreen] = useState<{ x: number; y: number } | null>(null);
 
+  const [connectionOrigin, setConnectionOrigin] = useState<{ x: number; y: number } | null>(null);
+
   /* ── Node drag preview state ── */
   const [draggingNodeType, setDraggingNodeType] = useState<NodeKind | null>(null);
   const dragPreviewRef = useRef<HTMLDivElement>(null);
 
-  function startConnect(nodeId: string, messages?: Message[]) {
+  function startConnect(nodeId: string, messages?: Message[], origin?: { x: number; y: number }) {
     setConnectingFrom(nodeId);
     setCachedMessages(messages ?? null);
+    setConnectionOrigin(origin ?? null);
   }
 
   function completeConnect(targetNodeId: string) {
@@ -195,6 +212,7 @@ function CanvasInner({ workspaceId }: CanvasProps) {
 
     setConnectingFrom(null);
     setCachedMessages(null);
+    setConnectionOrigin(null);
     setMouseScreen(null);
   }
 
@@ -355,10 +373,10 @@ function CanvasInner({ workspaceId }: CanvasProps) {
     });
   }
 
-  const sourcePos = connectingFrom ? getSourceScreenPos() : null;
+  const sourcePos = connectionOrigin ?? (connectingFrom ? getSourceScreenPos() : null);
 
   return (
-    <ConnectContext.Provider value={{ connectingFrom, cachedMessages, startConnect }}>
+    <ConnectContext.Provider value={{ connectingFrom, cachedMessages, connectionOrigin, startConnect }}>
       <div
         className="w-full h-full relative overflow-hidden"
         style={{

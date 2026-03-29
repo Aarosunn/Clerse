@@ -4,9 +4,6 @@ import { useState, ReactNode } from "react";
 import { NodeKind } from "@/types/nodes";
 import { Message } from "@/types/messages";
 import {
-  PanToolIcon,
-  SelectIcon,
-  ConnectIcon,
   SparkleIcon,
   PdfIcon,
   PlayCircleIcon,
@@ -32,13 +29,6 @@ interface ToolbarProps {
   draggingNodeType?: NodeKind | null;
 }
 
-/* Canvas tool buttons (pan, select, connect) */
-const CANVAS_TOOLS: { icon: (size: number) => ReactNode; id: string; label: string }[] = [
-  { id: "pan", icon: (s) => <PanToolIcon size={s} />, label: "Pan" },
-  { id: "select", icon: (s) => <SelectIcon size={s} />, label: "Select" },
-  { id: "connect", icon: (s) => <ConnectIcon size={s} />, label: "Connect" },
-];
-
 /* Node type creation buttons */
 const NODE_TOOLS: { kind: NodeKind; icon: (s: number) => ReactNode; label: string; color: string }[] = [
   { kind: "claude",    icon: (s) => <SparkleIcon size={s} />,     label: "Claude",   color: "#476083" },
@@ -50,11 +40,10 @@ const NODE_TOOLS: { kind: NodeKind; icon: (s: number) => ReactNode; label: strin
 ];
 
 function Divider() {
-  return <div className="w-px h-6 bg-primary/10 mx-2" />;
+  return <div className="w-px h-8 bg-primary/10 mx-2" />;
 }
 
 export default function Toolbar({ onAddNode, onStartDrag, onShare, roomId, draggingNodeType }: ToolbarProps) {
-  const [activeTool, setActiveTool] = useState("pan");
   const [copied, setCopied] = useState(false);
 
   function shareCanvas() {
@@ -74,7 +63,7 @@ export default function Toolbar({ onAddNode, onStartDrag, onShare, roomId, dragg
   return (
     /* NAVY_ACCENTED_DESIGN.md — fixed bottom center glass pill */
     <div
-      className="absolute bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-1 px-6 py-3 rounded-full"
+      className="absolute bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-8 py-4 rounded-full shadow-2xl"
       style={{
         background: "rgba(255, 255, 255, 0.72)",
         backdropFilter: "blur(24px)",
@@ -83,47 +72,23 @@ export default function Toolbar({ onAddNode, onStartDrag, onShare, roomId, dragg
         border: "1px solid rgba(188, 200, 209, 0.25)",
       }}
     >
-      {/* Canvas tools */}
-      {CANVAS_TOOLS.map((tool) => (
-        <button
-          key={tool.id}
-          title={tool.label}
-          onClick={() => setActiveTool(tool.id)}
-          className="flex flex-col items-center justify-center w-10 h-10 rounded-xl transition-all hover:scale-110 active:scale-95"
-          style={{
-            color: activeTool === tool.id ? "#476083" : "#6d7981",
-            background: activeTool === tool.id ? "rgba(71,96,131,0.08)" : "transparent",
-          }}
-        >
-          {tool.icon(18)}
-          <span
-            className="font-label uppercase tracking-widest mt-0.5"
-            style={{ fontSize: 7 }}
-          >
-            {tool.label}
-          </span>
-        </button>
-      ))}
-
-      <Divider />
-
       {/* Node creation tools */}
       {NODE_TOOLS.map(({ kind, icon, label, color }) => (
         <button
           key={kind}
           title={`Add ${label} node`}
           onClick={() => handleNodeClick(kind)}
-          className="flex flex-col items-center justify-center w-10 h-10 rounded-xl transition-all hover:scale-110 active:scale-95 hover:bg-surface-container/60"
+          className="flex flex-col items-center justify-center w-14 h-14 rounded-2xl transition-all hover:scale-110 active:scale-95 hover:bg-surface-container/60"
           style={{
             color,
             background: draggingNodeType === kind ? "rgba(71,96,131,0.12)" : "transparent",
             transform: draggingNodeType === kind ? "scale(0.9)" : "scale(1)",
           }}
         >
-          {icon(18)}
+          {icon(26)}
           <span
-            className="font-label uppercase tracking-widest mt-0.5"
-            style={{ fontSize: 7, color: "#6d7981" }}
+            className="font-label uppercase tracking-widest mt-1"
+            style={{ fontSize: 9, color: "#6d7981" }}
           >
             {label}
           </span>
@@ -136,19 +101,19 @@ export default function Toolbar({ onAddNode, onStartDrag, onShare, roomId, dragg
       <button
         title={roomId ? "Room active — copy link" : "Go live & copy share link"}
         onClick={shareCanvas}
-        className="flex flex-col items-center justify-center w-10 h-10 rounded-xl transition-all hover:scale-110 active:scale-95"
+        className="flex flex-col items-center justify-center w-14 h-14 rounded-2xl transition-all hover:scale-110 active:scale-95"
         style={{ color: copied ? "#27c93f" : roomId ? "#00BFFF" : "#00668a" }}
       >
         {copied ? (
-          <CheckCircleIcon size={18} />
+          <CheckCircleIcon size={26} />
         ) : roomId ? (
-          <GroupIcon size={18} />
+          <GroupIcon size={26} />
         ) : (
-          <ShareIcon size={18} />
+          <ShareIcon size={26} />
         )}
         <span
-          className="font-label uppercase tracking-widest mt-0.5"
-          style={{ fontSize: 7, color: roomId && !copied ? "#00BFFF" : "#6d7981" }}
+          className="font-label uppercase tracking-widest mt-1"
+          style={{ fontSize: 9, color: roomId && !copied ? "#00BFFF" : "#6d7981" }}
         >
           {copied ? "Copied" : roomId ? "Live" : "Share"}
         </span>
@@ -156,8 +121,9 @@ export default function Toolbar({ onAddNode, onStartDrag, onShare, roomId, dragg
 
       {/* Live pulse indicator */}
       {roomId && !copied && (
-        <div className="absolute -top-1 right-4 w-2.5 h-2.5 rounded-full bg-[#00BFFF] animate-pulse" />
+        <div className="absolute top-2 right-4 w-3 h-3 rounded-full bg-[#00BFFF] animate-pulse" />
       )}
     </div>
   );
 }
+

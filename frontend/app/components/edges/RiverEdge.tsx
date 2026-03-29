@@ -1,7 +1,8 @@
 "use client";
 
 import { memo, useEffect, useRef } from "react";
-import { EdgeProps, getBezierPath } from "@xyflow/react";
+import { EdgeProps, getBezierPath, useInternalNode } from "@xyflow/react";
+import { getEdgeParams } from "../../lib/edgeUtils";
 
 /**
  * RiverEdge — Single wavy SVG edge with animated flow.
@@ -64,13 +65,35 @@ function buildWavyPath({
 }
 
 function RiverEdge({
-  sourceX,
-  sourceY,
-  targetX,
-  targetY,
-  sourcePosition,
-  targetPosition,
+  source,
+  target,
+  sourceX: defaultSourceX,
+  sourceY: defaultSourceY,
+  targetX: defaultTargetX,
+  targetY: defaultTargetY,
+  sourcePosition: defaultSourcePosition,
+  targetPosition: defaultTargetPosition,
 }: EdgeProps) {
+  const sourceNode = useInternalNode(source);
+  const targetNode = useInternalNode(target);
+
+  let sourceX = defaultSourceX;
+  let sourceY = defaultSourceY;
+  let targetX = defaultTargetX;
+  let targetY = defaultTargetY;
+  let sourcePosition = defaultSourcePosition;
+  let targetPosition = defaultTargetPosition;
+
+  if (sourceNode && targetNode) {
+    const params = getEdgeParams(sourceNode, targetNode);
+    sourceX = params.sx;
+    sourceY = params.sy;
+    targetX = params.tx;
+    targetY = params.ty;
+    sourcePosition = params.sourcePos;
+    targetPosition = params.targetPos;
+  }
+
   // Get the standard bezier midpoints for the invisible interaction path
   const [edgePath] = getBezierPath({
     sourceX,

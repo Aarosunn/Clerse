@@ -192,7 +192,7 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
       }}
     >
       {!minimized && <NodeResizer minWidth={480} minHeight={260} color="#476083" />}
-      <Handle type="target" position={Position.Top} />
+      <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
 
       {/* ── Header §2 ── */}
       <div
@@ -247,11 +247,13 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
 
             {/* Branch button — starts river connection line */}
             <button
-              onClick={() => {
+              onClick={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const origin = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
                 const cached = selectedIndices.size > 0
                   ? Array.from(selectedIndices).sort((a, b) => a - b).map((i) => messages[i])
                   : [...messages];
-                startConnectMode(id, cached);
+                startConnectMode(id, cached, origin);
                 setIsSelecting(false);
                 setSelectedIndices(new Set());
               }}
@@ -609,7 +611,7 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
         </div>
       </div>}
 
-      <Handle type="source" position={Position.Bottom} />
+      <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} />
     </div>
   );
 }
