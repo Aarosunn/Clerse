@@ -8,6 +8,8 @@ import {
   ArrowForwardIcon,
 } from "./components/Icons";
 import BeachWaveBackground from "./components/BeachWaveBackground";
+import SplitText from "./components/SplitText";
+
 
 /* ── Minimal Material Symbol icons for landing page ── */
 function BookIcon({ size = 24 }: { size?: number }) {
@@ -156,11 +158,23 @@ export default function LandingPage() {
       <section className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] px-8 relative z-10">
         {/* Large Title */}
         <h1 className="font-sacrifice text-white text-[8rem] md:text-[12rem] leading-none mb-8 drop-shadow-lg">
-          Clerse
+          <SplitText
+            text="Clerse"
+            tag="span"
+            splitType="chars"
+            delay={120}
+            duration={1.8}
+            ease="power3.out"
+            from={{ opacity: 0, y: 60, rotateX: -20 }}
+            to={{ opacity: 1, y: 0, rotateX: 0 }}
+            threshold={0.05}
+            rootMargin="0px"
+            textAlign="center"
+          />
         </h1>
 
         {/* Subheadline */}
-        <p className="font-body text-white/80 text-xl max-w-2xl mx-auto text-center leading-relaxed mb-12 drop-shadow-sm">
+        <p className="font-body text-white text-xl max-w-2xl mx-auto text-center leading-relaxed mb-12 drop-shadow-md">
           The fluid spatial canvas for your AI-powered thinking. Move beyond
           boxes and lines into a natural landscape for ideas.
         </p>
