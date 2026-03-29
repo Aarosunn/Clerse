@@ -103,7 +103,7 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
         model,
         initialMessages: branchMessages,
       } satisfies ClaudeNodeData,
-      style: { width: 420 },
+      style: { width: 480 },
     });
     addEdges({
       id: `${id}-${branchId}`,
@@ -140,7 +140,7 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
                 ...n,
                 style: {
                   ...n.style,
-                  width: newMinimized ? 280 : 420,
+                  width: newMinimized ? 280 : 480,
                   height: newMinimized ? 'auto' : undefined,
                 },
               }
@@ -169,7 +169,7 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
         model,
         initialMessages: messages.slice(0, upToIndex + 1),
       } satisfies ClaudeNodeData,
-      style: { width: 420 },
+      style: { width: 480 },
     });
     addEdges({
       id: `${id}-${branchId}`,
@@ -186,12 +186,12 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
       style={{
         width: "100%",
         minHeight: minimized ? 48 : 320,
-        height: minimized ? 'auto' : undefined,
+        height: minimized ? 'auto' : "100%",
         border: "1px solid rgba(188,200,209,0.10)",
         boxShadow: "0 12px 40px rgba(28,28,25,0.06)",
       }}
     >
-      {!minimized && <NodeResizer minWidth={320} minHeight={260} color="#476083" />}
+      {!minimized && <NodeResizer minWidth={480} minHeight={260} color="#476083" />}
       <Handle type="target" position={Position.Top} />
 
       {/* ── Header §2 ── */}
@@ -223,7 +223,7 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
 
         {/* Right: model tag + selecting badge + branch action (hide when minimized) */}
         {!minimized && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap justify-end">
             <ModelSelector value={model} onChange={setModel} />
 
             {/* CHAT_NODE_DESIGN.md §2 — Selecting button (always visible) */}
@@ -296,7 +296,6 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
         style={{
           padding: "24px 32px",
           background: "rgba(252,249,244,0.5)",
-          maxHeight: 380,
         }}
       >
         {/* Referenced context from connected nodes */}
@@ -389,7 +388,7 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
                     </button>
                   )}
                   <div
-                    className="font-body text-sm text-on-surface leading-relaxed px-5 py-4 max-w-[88%]"
+                    className="font-body text-sm text-on-surface leading-relaxed px-5 py-4 max-w-[88%] break-words whitespace-pre-wrap"
                     style={{
                       background: "rgba(235,232,227,0.80)",
                       borderRadius: "0.75rem 0.75rem 0 0.75rem",

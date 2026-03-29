@@ -313,7 +313,7 @@ function CanvasInner({ workspaceId }: CanvasProps) {
         break;
     }
 
-    addNodes({ id, type: kind, position: pos, data: data as Record<string, unknown>, style: { width: kind === "claude" ? 420 : 340 } });
+    addNodes({ id, type: kind, position: pos, data: data as Record<string, unknown>, style: { width: kind === "claude" ? 480 : 340 } });
     return id;
   }
 

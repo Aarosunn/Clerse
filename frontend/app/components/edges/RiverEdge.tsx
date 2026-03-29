@@ -1,10 +1,10 @@
 "use client";
 
-import { memo, useMemo } from "react";
+import { memo, useEffect, useRef } from "react";
 import { EdgeProps, getBezierPath } from "@xyflow/react";
 
 /**
- * RiverEdge — 3-layered wavy SVG edge with animated flow.
+ * RiverEdge — Single wavy SVG edge with animated flow.
  * Uses sine-wave displacement on top of a standard bezier path
  * for a river/current aesthetic matching the canvas background.
  */
@@ -63,12 +63,6 @@ function buildWavyPath({
   return points.join(" ");
 }
 
-const RIVER_LAYERS = [
-  { color: "#00BFFF", opacity: 0.5, width: 2.5, amplitudeScale: 1.0, phaseOffset: 0, dashArray: "none" },
-  { color: "#476083", opacity: 0.3, width: 1.5, amplitudeScale: 0.7, phaseOffset: 2.1, dashArray: "none" },
-  { color: "#00bdfd", opacity: 0.2, width: 1.0, amplitudeScale: 1.3, phaseOffset: 4.2, dashArray: "6 4" },
-];
-
 function RiverEdge({
   sourceX,
   sourceY,
@@ -87,20 +81,39 @@ function RiverEdge({
     targetPosition,
   });
 
-  const paths = useMemo(() => {
-    return RIVER_LAYERS.map((layer, i) => {
-      const d = buildWavyPath({
+  const pathRef = useRef<SVGPathElement>(null);
+
+  useEffect(() => {
+    let animationFrameId: number;
+    let startTime = performance.now();
+
+    const animate = (time: number) => {
+      // Calculate a phase shift based on time to make the wave flow
+      // A negative phase makes the wave flow from source to target
+      const elapsedTime = time - startTime;
+      const phase = (elapsedTime / 1000) * -1.5;
+
+      const newPath = buildWavyPath({
         sourceX,
         sourceY,
         targetX,
         targetY,
-        amplitude: 8 * layer.amplitudeScale,
-        frequency: 1.5,
-        phase: layer.phaseOffset,
-        segments: 64,
+        amplitude: 15, // Determines how wide the wave is
+        frequency: 2.5, // Determines how many peaks the wave has
+        phase,
+        segments: 64, // Resolution of the curve
       });
-      return { ...layer, d, key: i };
-    });
+
+      if (pathRef.current) {
+        pathRef.current.setAttribute("d", newPath);
+      }
+
+      animationFrameId = requestAnimationFrame(animate);
+    };
+
+    animationFrameId = requestAnimationFrame(animate);
+
+    return () => cancelAnimationFrame(animationFrameId);
   }, [sourceX, sourceY, targetX, targetY]);
 
   return (
@@ -114,25 +127,22 @@ function RiverEdge({
         className="react-flow__edge-interaction"
       />
 
-      {/* 3 animated river layers */}
-      {paths.map(({ key, d, color, opacity, width, dashArray }) => (
-        <path
-          key={key}
-          d={d}
-          fill="none"
-          stroke={color}
-          strokeWidth={width}
-          strokeOpacity={opacity}
-          strokeDasharray={dashArray}
-          strokeLinecap="round"
-          className="river-edge-path"
-          style={{
-            filter: key === 0 ? "drop-shadow(0 0 3px rgba(0,191,255,0.3))" : undefined,
-          }}
-        />
-      ))}
+      {/* 1 animated river solid layer */}
+      <path
+        ref={pathRef}
+        fill="none"
+        stroke="#00BFFF"
+        strokeWidth={6}
+        strokeOpacity={0.8}
+        strokeLinecap="round"
+        className="river-edge-path"
+        style={{
+          filter: "drop-shadow(0 0 4px rgba(0,191,255,0.7))",
+        }}
+      />
     </g>
   );
 }
 
 export default memo(RiverEdge);
+
