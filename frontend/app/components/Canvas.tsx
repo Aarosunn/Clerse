@@ -162,7 +162,7 @@ function CanvasInner({ workspaceId }: CanvasProps) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [nodes, , onNodesChange] = useNodesState<any>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
-  const { addNodes, addEdges, getNode, setNodes, getViewport, flowToScreenPosition } = useReactFlow();
+  const { addNodes, addEdges, getNode, setNodes, getViewport, flowToScreenPosition, screenToFlowPosition } = useReactFlow();
 
   /* ── Connect mode state ── */
   const [connectingFrom, setConnectingFrom] = useState<string | null>(null);
@@ -251,14 +251,11 @@ function CanvasInner({ workspaceId }: CanvasProps) {
   function placeDraggingNode(e: React.MouseEvent) {
     if (!draggingNodeType) return;
 
-    // Get the ReactFlow wrapper element
-    const reactFlowBounds = (e.target as HTMLElement).closest('.react-flow')?.getBoundingClientRect();
-    if (!reactFlowBounds) return;
-
-    // Calculate relative position within the canvas
+    const nodeWidth = draggingNodeType === "claude" ? 480 : 340;
+    const flowPos = screenToFlowPosition({ x: e.clientX, y: e.clientY });
     const position = {
-      x: e.clientX - reactFlowBounds.left - 160, // Offset to center the node
-      y: e.clientY - reactFlowBounds.top - 100,
+      x: flowPos.x - nodeWidth / 2,
+      y: flowPos.y - 40,
     };
 
     spawnNode(draggingNodeType, undefined, position);
