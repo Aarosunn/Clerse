@@ -76,6 +76,7 @@ export default function YouTubeNode({ id, data: rawData }: NodeProps<any>) {
       className="rounded-xl flex flex-col animate-fade-scale overflow-hidden"
       style={{
         width: "100%",
+        height: "100%",
         background: "#ffffff",
         boxShadow: "0 8px 24px rgba(28,28,25,0.08)",
         border: "1px solid rgba(188,200,209,0.15)",
@@ -109,7 +110,7 @@ export default function YouTubeNode({ id, data: rawData }: NodeProps<any>) {
       </div>
 
       {!minimized && (
-        <div style={{ padding: "14px 16px 16px" }} className="flex flex-col gap-3">
+        <div style={{ padding: "14px 16px 16px", flex: "1 1 0", minHeight: 0, overflowY: "auto" }} className="flex flex-col gap-3">
           {/* URL input */}
           <div className="flex gap-2 items-center">
           <input

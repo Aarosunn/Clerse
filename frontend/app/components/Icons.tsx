@@ -556,3 +556,25 @@ export function WaterDropIcon(p: IconProps) {
     p
   );
 }
+
+export function QuizIcon(p: IconProps) {
+  return wrap(
+    <>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
+    </>,
+    p
+  );
+}
+
+export function MarkdownIcon(p: IconProps) {
+  return wrap(
+    <>
+      <rect x="2" y="4" width="20" height="16" rx="2" />
+      <path d="M6 8v8l3-3 3 3V8" />
+      <path d="M18 16l-2-3h-1v-5h2v3l2-3v8" />
+    </>,
+    p
+  );
+}

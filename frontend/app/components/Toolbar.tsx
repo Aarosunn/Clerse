@@ -10,7 +10,9 @@ import {
   ArticleIcon,
   ImageIcon,
   FlashcardIcon,
+  QuizIcon,
   TextIcon,
+  MarkdownIcon,
   ShareIcon,
   GroupIcon,
   CheckCircleIcon,
@@ -38,7 +40,9 @@ const NODE_TOOLS: { kind: NodeKind; icon: (s: number) => ReactNode; label: strin
   { kind: "article",   icon: (s) => <ArticleIcon size={s} />,     label: "Article",  color: "#4a7c59" },
   { kind: "image",     icon: (s) => <ImageIcon size={s} />,       label: "Image",    color: "#7b5ea7" },
   { kind: "flashcard", icon: (s) => <FlashcardIcon size={s} />,   label: "Cards",    color: "#c89b3c" },
+  { kind: "quiz",      icon: (s) => <QuizIcon size={s} />,       label: "Quiz",     color: "#d97706" },
   { kind: "text",      icon: (s) => <TextIcon size={s} />,       label: "Text",     color: "#6d7981" },
+  { kind: "pdfdoc",    icon: (s) => <MarkdownIcon size={s} />,   label: "Doc",      color: "#a43c12" },
 ];
 
 function Divider() {

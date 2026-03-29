@@ -95,6 +95,7 @@ export default function PDFNode({ id, data: rawData }: NodeProps<any>) {
       className="rounded-xl flex flex-col animate-fade-scale overflow-hidden"
       style={{
         width: "100%",
+        height: "100%",
         background: "#e5e2dd", /* surface-container-highest */
         boxShadow: "0 8px 24px rgba(28,28,25,0.10)",
         border: "1px solid rgba(188,200,209,0.20)",
@@ -140,7 +141,7 @@ export default function PDFNode({ id, data: rawData }: NodeProps<any>) {
       </div>
 
       {/* PDF Preview area */}
-      {!minimized && <div style={{ padding: "0 16px 16px" }}>
+      {!minimized && <div style={{ padding: "0 16px 16px", flex: "1 1 0", minHeight: 0, overflowY: "auto" }}>
         {!extracted ? (
           /* Drop zone */
           <div

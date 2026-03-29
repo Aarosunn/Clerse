@@ -6,8 +6,8 @@ interface WindowControlsProps {
   nodeId: string;
   minimized: boolean;
   onToggleMinimize: () => void;
-  isFullscreen: boolean;
-  onToggleFullscreen: () => void;
+  isFullscreen?: boolean;
+  onToggleFullscreen?: () => void;
 }
 
 export default function WindowControls({
@@ -31,7 +31,7 @@ export default function WindowControls({
 
   function handleFullscreen(e: React.MouseEvent) {
     e.stopPropagation();
-    onToggleFullscreen();
+    onToggleFullscreen?.();
   }
 
   return (

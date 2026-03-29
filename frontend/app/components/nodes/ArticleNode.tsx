@@ -73,7 +73,7 @@ export default function ArticleNode({ id, data: rawData }: NodeProps<any>) {
   return (
     <div
       className="rounded-xl flex flex-col animate-fade-scale overflow-hidden"
-      style={{ width: "100%", background: "#ffffff", boxShadow: "0 8px 24px rgba(28,28,25,0.08)", border: "1px solid rgba(188,200,209,0.15)" }}
+      style={{ width: "100%", height: "100%", background: "#ffffff", boxShadow: "0 8px 24px rgba(28,28,25,0.08)", border: "1px solid rgba(188,200,209,0.15)" }}
     >
       <NodeResizer minWidth={280} minHeight={180} color={ACCENT} />
       <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
@@ -100,7 +100,7 @@ export default function ArticleNode({ id, data: rawData }: NodeProps<any>) {
       </div>
 
       {!minimized && (
-        <div style={{ padding: "14px 16px 16px" }} className="flex flex-col gap-3">
+        <div style={{ padding: "14px 16px 16px", flex: "1 1 0", minHeight: 0, overflowY: "auto" }} className="flex flex-col gap-3">
           <div className="flex gap-2 items-center">
           <input
             value={url}

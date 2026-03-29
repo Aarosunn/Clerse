@@ -30,7 +30,9 @@ import YouTubeNode from "./nodes/YouTubeNode";
 import ArticleNode from "./nodes/ArticleNode";
 import ImageNode from "./nodes/ImageNode";
 import FlashcardNode from "./nodes/FlashcardNode";
+import QuizNode from "./nodes/QuizNode";
 import TextNode from "./nodes/TextNode";
+import PDFDocNode from "./nodes/PDFDocNode";
 import RiverEdge from "./edges/RiverEdge";
 import {
   SparkleIcon,
@@ -39,7 +41,9 @@ import {
   ArticleIcon as ArticleIconComponent,
   ImageIcon as ImageIconComponent,
   FlashcardIcon,
+  QuizIcon,
   TextIcon as TextIconComponent,
+  MarkdownIcon,
 } from "./Icons";
 
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
@@ -82,7 +86,11 @@ const nodeTypes: NodeTypes = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   flashcard: FlashcardNode as any,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  quiz: QuizNode as any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   text: TextNode as any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  pdfdoc: PDFDocNode as any,
 };
 
 const edgeTypes: EdgeTypes = {
@@ -398,8 +406,14 @@ function CanvasInner({ workspaceId }: CanvasProps) {
       case "flashcard":
         data = { kind: "flashcard", label: "Flashcards", cards: [], sourceNodeId: "" };
         break;
+      case "quiz":
+        data = { kind: "quiz", label: "Quiz", questions: [], sourceNodeId: "" };
+        break;
       case "text":
         data = { kind: "text", label: "Text", content: "" };
+        break;
+      case "pdfdoc":
+        data = { kind: "pdfdoc", label: "Document", markdown: "", title: "Untitled Document" };
         break;
     }
 
@@ -432,7 +446,9 @@ function CanvasInner({ workspaceId }: CanvasProps) {
     article: "#4a7c59",
     image: "#7b5ea7",
     flashcard: "#c89b3c",
+    quiz: "#d97706",
     text: "#6d7981",
+    pdfdoc: "#a43c12",
   };
 
   /* ── Connection line: compute source screen position ── */
@@ -613,7 +629,9 @@ function CanvasInner({ workspaceId }: CanvasProps) {
               {draggingNodeType === "article" && <ArticleIconComponent size={28} />}
               {draggingNodeType === "image" && <ImageIconComponent size={28} />}
               {draggingNodeType === "flashcard" && <FlashcardIcon size={28} />}
+              {draggingNodeType === "quiz" && <QuizIcon size={28} />}
               {draggingNodeType === "text" && <TextIconComponent size={28} />}
+              {draggingNodeType === "pdfdoc" && <MarkdownIcon size={28} />}
             </div>
           </div>
         )}
