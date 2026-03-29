@@ -61,28 +61,18 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
     setStreaming(true);
     setStreamText("");
 
-    const res = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages: newMessages, model }),
-    });
-
-    const reader = res.body!.getReader();
-    const decoder = new TextDecoder();
-    let full = "";
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      full += decoder.decode(value, { stream: true });
-      setStreamText(full);
+    // Stub response — simulates streaming without calling the backend
+    const stub = "This is a placeholder response. Connect the backend to get real Claude answers.";
+    for (let i = 0; i <= stub.length; i++) {
+      await new Promise((r) => setTimeout(r, 15));
+      setStreamText(stub.slice(0, i));
     }
 
-    setMessages((m) => [...m, buildAssistantMessage(full)]);
+    setMessages((m) => [...m, buildAssistantMessage(stub)]);
     setStreamText("");
     setStreaming(false);
     setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
-  }, [input, messages, model, streaming]);
+  }, [input, messages, streaming]);
 
   /* ── Branch from selected messages ── */
   function branchFromSelection() {

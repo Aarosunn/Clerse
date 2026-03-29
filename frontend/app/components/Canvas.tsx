@@ -21,6 +21,7 @@ import { Message } from "@/types/messages";
 import { CURSOR_COLORS } from "@/lib/liveblocks";
 import Toolbar from "./Toolbar";
 import Presence from "./Presence";
+import DotGrid from "./DotGrid";
 import ClaudeNode from "./nodes/ClaudeNode";
 import PDFNode from "./nodes/PDFNode";
 import YouTubeNode from "./nodes/YouTubeNode";
@@ -148,8 +149,8 @@ function CanvasInner({ workspaceId }: CanvasProps) {
 
   return (
     <div className="w-full h-full relative overflow-hidden" style={{ background: "#f6f3ee" }}>
-      {/* Layer 0: Dot grid */}
-      <div className="absolute inset-0 canvas-grid" />
+      {/* Layer 0: Interactive dot grid */}
+      <DotGrid />
 
       {/* Layer 1: Radial ripple — ambient depth */}
       <div
@@ -205,6 +206,9 @@ function CanvasInner({ workspaceId }: CanvasProps) {
           nodeTypes={nodeTypes}
           fitView
           fitViewOptions={{ padding: 0.4 }}
+          panOnScroll
+          zoomOnScroll={false}
+          zoomOnPinch
           style={{ background: "transparent" }}
           proOptions={{ hideAttribution: false }}
         >
