@@ -3,6 +3,8 @@ import uuid
 
 import pytest
 
+from app.models.clerse import Message
+
 
 @pytest.mark.asyncio
 async def test_create_workspace(client):
@@ -92,4 +94,71 @@ async def test_delete_workspace(client):
 @pytest.mark.asyncio
 async def test_delete_workspace_not_found(client):
     response = await client.delete(f"/api/workspaces/{uuid.uuid4()}")
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_get_messages_empty(client, workspace):
+    response = await client.get(
+        f"/api/workspaces/{workspace.id}/nodes/node-abc/messages"
+    )
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+@pytest.mark.asyncio
+async def test_get_messages_ordered_by_created_at(client, workspace, db):
+    node_id = "node-abc"
+    msg1 = Message(
+        workspace_id=workspace.id, node_id=node_id,
+        role="user", content="Hello"
+    )
+    db.add(msg1)
+    await db.commit()
+    await db.refresh(msg1)
+
+    msg2 = Message(
+        workspace_id=workspace.id, node_id=node_id,
+        role="assistant", content="Hi there"
+    )
+    db.add(msg2)
+    await db.commit()
+    await db.refresh(msg2)
+
+    response = await client.get(
+        f"/api/workspaces/{workspace.id}/nodes/{node_id}/messages"
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 2
+    assert data[0]["role"] == "user"
+    assert data[0]["content"] == "Hello"
+    assert data[1]["role"] == "assistant"
+    assert data[1]["content"] == "Hi there"
+    assert "id" in data[0]
+    assert "created_at" in data[0]
+
+
+@pytest.mark.asyncio
+async def test_get_messages_only_for_correct_node(client, workspace, db):
+    node_a = "node-aaa"
+    node_b = "node-bbb"
+    db.add(Message(workspace_id=workspace.id, node_id=node_a, role="user", content="A"))
+    db.add(Message(workspace_id=workspace.id, node_id=node_b, role="user", content="B"))
+    await db.commit()
+
+    response = await client.get(
+        f"/api/workspaces/{workspace.id}/nodes/{node_a}/messages"
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    assert data[0]["content"] == "A"
+
+
+@pytest.mark.asyncio
+async def test_get_messages_workspace_not_found(client):
+    response = await client.get(
+        f"/api/workspaces/{uuid.uuid4()}/nodes/node-abc/messages"
+    )
     assert response.status_code == 404

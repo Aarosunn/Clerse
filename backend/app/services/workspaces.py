@@ -4,7 +4,7 @@ import uuid
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.clerse import Workspace
+from app.models.clerse import Message, Workspace
 
 
 async def create_workspace(title: str, db: AsyncSession) -> Workspace:
@@ -45,3 +45,16 @@ async def delete_workspace(workspace_id: uuid.UUID, db: AsyncSession) -> bool:
     await db.delete(workspace)
     await db.commit()
     return True
+
+
+async def get_node_messages(
+    workspace_id: uuid.UUID,
+    node_id: str,
+    db: AsyncSession,
+) -> list[Message]:
+    result = await db.execute(
+        select(Message)
+        .where(Message.workspace_id == workspace_id, Message.node_id == node_id)
+        .order_by(Message.created_at)
+    )
+    return list(result.scalars().all())

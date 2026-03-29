@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.schemas.clerse import (
+    MessageResponse,
     WorkspaceCreate,
     WorkspaceCreatedResponse,
     WorkspaceGetResponse,
@@ -50,3 +51,16 @@ async def delete_workspace(workspace_id: uuid.UUID, db: AsyncSession = Depends(g
     deleted = await workspace_service.delete_workspace(workspace_id, db)
     if not deleted:
         raise HTTPException(status_code=404, detail="Workspace not found")
+
+
+@router.get("/{workspace_id}/nodes/{node_id}/messages", response_model=list[MessageResponse])
+async def get_node_messages(
+    workspace_id: uuid.UUID,
+    node_id: str,
+    db: AsyncSession = Depends(get_db),
+):
+    workspace = await workspace_service.get_workspace(workspace_id, db)
+    if workspace is None:
+        raise HTTPException(status_code=404, detail="Workspace not found")
+    messages = await workspace_service.get_node_messages(workspace_id, node_id, db)
+    return messages
