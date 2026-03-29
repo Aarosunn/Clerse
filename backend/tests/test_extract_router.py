@@ -91,3 +91,15 @@ async def test_extract_article_endpoint(client: AsyncClient, workspace):
     body = response.json()
     assert body["text"] == "Article body text"
     assert body["title"] == "My Article"
+
+
+@pytest.mark.asyncio
+async def test_extract_pdf_file_too_large(client: AsyncClient, workspace):
+    large_bytes = b"x" * (10 * 1024 * 1024 + 1)  # 10 MB + 1 byte
+    response = await client.post(
+        "/api/extract/pdf",
+        data={"workspace_id": str(workspace.id), "node_id": "node-pdf-1"},
+        files={"file": ("large.pdf", io.BytesIO(large_bytes), "application/pdf")},
+    )
+    assert response.status_code == 413
+    assert "too large" in response.json()["detail"].lower()
