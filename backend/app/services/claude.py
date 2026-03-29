@@ -50,6 +50,9 @@ async def stream_chat(
     assistant_content_blocks: list[dict] = []
     usage = None
 
+    # Track the index in assistant_content_blocks for the current open text block
+    _current_text_block_idx: int | None = None
+
     async with anthropic_client.messages.stream(
         model=model,
         max_tokens=settings.ANTHROPIC_MAX_TOKENS,
@@ -58,28 +61,31 @@ async def stream_chat(
         tools=TOOL_DEFINITIONS,
     ) as stream:
         async for event in stream:
-            if (
-                event.type == "content_block_start"
-                and hasattr(event, "content_block")
-                and event.content_block.type == "tool_use"
-            ):
-                yield sse_event({"type": "tool_start", "name": event.content_block.name})
-                tool_calls.append({
-                    "id": event.content_block.id,
-                    "name": event.content_block.name,
-                    "input": "",
-                })
-                assistant_content_blocks.append({
-                    "type": "tool_use",
-                    "id": event.content_block.id,
-                    "name": event.content_block.name,
-                    "input": {},  # filled after parse
-                })
+            if event.type == "content_block_start" and hasattr(event, "content_block"):
+                if event.content_block.type == "tool_use":
+                    yield sse_event({"type": "tool_start", "name": event.content_block.name})
+                    tool_calls.append({
+                        "id": event.content_block.id,
+                        "name": event.content_block.name,
+                        "input": "",
+                    })
+                    assistant_content_blocks.append({
+                        "type": "tool_use",
+                        "id": event.content_block.id,
+                        "name": event.content_block.name,
+                        "input": {},  # filled after parse
+                    })
+                    _current_text_block_idx = None
+                elif event.content_block.type == "text":
+                    assistant_content_blocks.append({"type": "text", "text": ""})
+                    _current_text_block_idx = len(assistant_content_blocks) - 1
 
             elif event.type == "content_block_delta":
                 if hasattr(event.delta, "text"):
                     accumulated_text += event.delta.text
                     yield sse_event({"type": "token", "text": event.delta.text})
+                    if _current_text_block_idx is not None:
+                        assistant_content_blocks[_current_text_block_idx]["text"] += event.delta.text
                 elif hasattr(event.delta, "partial_json") and tool_calls:
                     tool_calls[-1]["input"] += event.delta.partial_json
 

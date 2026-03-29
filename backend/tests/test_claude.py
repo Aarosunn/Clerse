@@ -152,6 +152,62 @@ async def test_stream_chat_yields_tool_start_event(workspace, db):
 
 
 @pytest.mark.asyncio
+async def test_stream_chat_mixed_text_and_tool(workspace, db):
+    """Text delta + tool call in same response — assistant_content_blocks must include both."""
+    tool_id = "toolu_xyz"
+    events_first = [
+        # Text block starts first
+        MagicMock(**{"type": "content_block_start", "content_block": MagicMock(**{"type": "text"})}),
+        _make_text_event("Let me branch this."),
+        # Then tool_use block
+        _make_tool_start_event(tool_id, "suggest_branch"),
+        _make_partial_json_event('{"title": "Deep dive", "reason": "more detail"}'),
+    ]
+    final_first = _make_final_message(60, 25)
+
+    captured_followup_messages = []
+
+    events_second = [_make_text_event("Done.")]
+    final_second = _make_final_message(90, 8)
+
+    call_count = 0
+
+    def _stream_factory(**kwargs):
+        nonlocal call_count
+        call_count += 1
+        if call_count == 2:
+            captured_followup_messages.extend(kwargs.get("messages", []))
+        if call_count == 1:
+            return _mock_stream(events_first, final_first)
+        return _mock_stream(events_second, final_second)
+
+    with patch("app.services.claude.anthropic_client.messages.stream", side_effect=_stream_factory):
+        async for _ in stream_chat(
+            workspace_id=workspace.id,
+            node_id="node-1",
+            user_content="Branch this",
+            connected_node_ids=[],
+            model="claude-sonnet-4-6",
+            db=db,
+        ):
+            pass
+
+    # The follow-up stream's messages should end with an assistant turn
+    # that has BOTH a text block and a tool_use block
+    assert len(captured_followup_messages) >= 2
+    assistant_turn = next(
+        (m for m in reversed(captured_followup_messages) if m["role"] == "assistant"),
+        None,
+    )
+    assert assistant_turn is not None
+    content = assistant_turn["content"]
+    assert isinstance(content, list)
+    block_types = [b["type"] for b in content]
+    assert "text" in block_types
+    assert "tool_use" in block_types
+
+
+@pytest.mark.asyncio
 async def test_sse_event_format():
     """sse_event() produces correct SSE format."""
     result = sse_event({"type": "token", "text": "hello"})
