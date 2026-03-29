@@ -141,7 +141,7 @@ export default function PDFNode({ id, data: rawData }: NodeProps<any>) {
       </div>
 
       {/* PDF Preview area */}
-      {!minimized && <div style={{ padding: "0 16px 16px", flex: "1 1 0", minHeight: 0, overflowY: "auto" }}>
+      {!minimized && <div className="nowheel" style={{ padding: "0 16px 16px", flex: "1 1 0", minHeight: 0, overflowY: "auto" }}>
         {!extracted ? (
           /* Drop zone */
           <div

@@ -108,7 +108,7 @@ export default function FlashcardNode({ id, data: rawData }: NodeProps<any>) {
       </div>
 
       {!minimized && (
-        <div style={{ padding: "14px 16px 16px", flex: "1 1 0", minHeight: 0, overflowY: "auto" }} className="flex flex-col gap-3">
+        <div style={{ padding: "14px 16px 16px", flex: "1 1 0", minHeight: 0, overflowY: "auto" }} className="flex flex-col gap-3 nowheel">
           {cards.length === 0 ? (
             <>
               <textarea

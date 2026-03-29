@@ -97,7 +97,7 @@ export default function ImageNode({ id, data: rawData }: NodeProps<any>) {
       </div>
 
       {!minimized && (
-        <div style={{ padding: "14px 16px 16px", flex: "1 1 0", minHeight: 0, overflowY: "auto" }} className="flex flex-col gap-3">
+        <div style={{ padding: "14px 16px 16px", flex: "1 1 0", minHeight: 0, overflowY: "auto" }} className="flex flex-col gap-3 nowheel">
           {!base64 ? (
             <div
               className="rounded-xl flex flex-col items-center justify-center cursor-pointer hover:brightness-95 transition-all"

@@ -151,7 +151,7 @@ export default function QuizNode({ id, data: rawData }: NodeProps<any>) {
 
       {/* Body */}
       {!minimized && (
-        <div style={{ padding: "14px 16px 16px", flex: "1 1 0", minHeight: 0, overflowY: "auto" }} className="flex flex-col gap-3">
+        <div style={{ padding: "14px 16px 16px", flex: "1 1 0", minHeight: 0, overflowY: "auto" }} className="flex flex-col gap-3 nowheel">
           {questions.length === 0 ? (
             <>
               <textarea

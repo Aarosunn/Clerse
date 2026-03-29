@@ -187,7 +187,7 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
         model,
         initialMessages: branchMessages,
       } satisfies ClaudeNodeData,
-      style: { width: 480 },
+      style: { width: 480, height: 520 },
     });
     addEdges({
       id: `${id}-${branchId}`,
@@ -225,7 +225,7 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
                 style: {
                   ...n.style,
                   width: newMinimized ? 280 : 480,
-                  height: newMinimized ? 'auto' : undefined,
+                  height: newMinimized ? 'auto' : 520,
                 },
               }
             : n
@@ -253,7 +253,7 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
         model,
         initialMessages: messages.slice(0, upToIndex + 1),
       } satisfies ClaudeNodeData,
-      style: { width: 480 },
+      style: { width: 480, height: 520 },
     });
     addEdges({
       id: `${id}-${branchId}`,
@@ -396,7 +396,7 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
 
       {/* ── Message area §3 ── */}
       {!minimized && <div
-        className="overflow-y-auto"
+        className="overflow-y-auto nowheel"
         style={{
           padding: "24px 32px",
           background: "rgba(252,249,244,0.5)",
@@ -434,7 +434,7 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
                 {referencedMessages.length} message{referencedMessages.length !== 1 ? "s" : ""}
               </span>
             </div>
-            <div className="px-3 py-2 space-y-2 max-h-32 overflow-y-auto">
+            <div className="px-3 py-2 space-y-2 max-h-32 overflow-y-auto nowheel">
               {referencedMessages.map((msg, i) => (
                 <div
                   key={`ref-${i}`}

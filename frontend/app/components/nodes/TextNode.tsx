@@ -97,7 +97,7 @@ export default function TextNode({ id, data: rawData }: NodeProps<any>) {
 
       {/* Content area */}
       {!minimized && (
-        <div style={{ padding: "14px 16px 16px", flex: "1 1 0", minHeight: 0, overflowY: "auto" }}>
+        <div className="nowheel" style={{ padding: "14px 16px 16px", flex: "1 1 0", minHeight: 0, overflowY: "auto" }}>
           <textarea
             ref={textareaRef}
             value={content}

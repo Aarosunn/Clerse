@@ -417,7 +417,19 @@ function CanvasInner({ workspaceId }: CanvasProps) {
         break;
     }
 
-    addNodes({ id, type: kind, position: pos, data: data as Record<string, unknown>, style: { width: kind === "claude" ? 480 : 340 } });
+    const defaultSizes: Record<string, { width: number; height: number }> = {
+      claude: { width: 480, height: 520 },
+      pdf: { width: 340, height: 400 },
+      youtube: { width: 340, height: 360 },
+      article: { width: 340, height: 360 },
+      image: { width: 340, height: 360 },
+      flashcard: { width: 340, height: 380 },
+      quiz: { width: 340, height: 420 },
+      text: { width: 340, height: 280 },
+      pdfdoc: { width: 340, height: 400 },
+    };
+    const size = defaultSizes[kind] ?? { width: 340, height: 360 };
+    addNodes({ id, type: kind, position: pos, data: data as Record<string, unknown>, style: { width: size.width, height: size.height } });
     return id;
   }
 

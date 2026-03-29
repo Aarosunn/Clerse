@@ -140,7 +140,7 @@ export default function PDFDocNode({ id, data: rawData }: NodeProps<any>) {
 
       {/* Body */}
       {!minimized && (
-        <div style={{ padding: "14px 16px 16px", flex: "1 1 0", minHeight: 0, overflowY: "auto" }} className="flex flex-col gap-3">
+        <div style={{ padding: "14px 16px 16px", flex: "1 1 0", minHeight: 0, overflowY: "auto" }} className="flex flex-col gap-3 nowheel">
           {!markdown.trim() && !generating ? (
             <>
               <textarea
@@ -165,7 +165,7 @@ export default function PDFDocNode({ id, data: rawData }: NodeProps<any>) {
             <>
               {/* Rendered markdown */}
               <div
-                className="rounded-xl overflow-y-auto"
+                className="rounded-xl overflow-y-auto nowheel"
                 style={{
                   background: "#faf9f7",
                   border: "1px solid rgba(188,200,209,0.12)",

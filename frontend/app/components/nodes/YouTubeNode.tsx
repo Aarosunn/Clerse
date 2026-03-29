@@ -110,7 +110,7 @@ export default function YouTubeNode({ id, data: rawData }: NodeProps<any>) {
       </div>
 
       {!minimized && (
-        <div style={{ padding: "14px 16px 16px", flex: "1 1 0", minHeight: 0, overflowY: "auto" }} className="flex flex-col gap-3">
+        <div style={{ padding: "14px 16px 16px", flex: "1 1 0", minHeight: 0, overflowY: "auto" }} className="flex flex-col gap-3 nowheel">
           {/* URL input */}
           <div className="flex gap-2 items-center">
           <input
@@ -144,7 +144,7 @@ export default function YouTubeNode({ id, data: rawData }: NodeProps<any>) {
                 <p className="font-label uppercase tracking-widest text-on-surface-variant truncate" style={{ fontSize: 10 }}>{title}</p>
               </div>
             )}
-            <div className="rounded-xl px-3 py-2 overflow-y-auto" style={{ background: "#f0ede8", maxHeight: 100 }}>
+            <div className="rounded-xl px-3 py-2 overflow-y-auto nowheel" style={{ background: "#f0ede8", maxHeight: 100 }}>
               <p className="font-body text-xs text-on-surface-variant leading-relaxed">{transcript.slice(0, 400)}…</p>
             </div>
             <button
