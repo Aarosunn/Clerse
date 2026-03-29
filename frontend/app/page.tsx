@@ -138,21 +138,6 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* Floating Left Sidebar */}
-      <aside className="floating-sidebar hidden lg:flex !bg-white/15 !backdrop-blur-md !shadow-none border border-white/20">
-        <button className="text-white/60 hover:text-white hover:scale-110 transition-all">
-          <DashboardIcon size={24} />
-        </button>
-        <button className="text-white/60 hover:text-white hover:scale-110 transition-all">
-          <FolderIcon size={24} />
-        </button>
-        <button className="text-white/60 hover:text-white hover:scale-110 transition-all">
-          <HistoryIcon size={24} />
-        </button>
-        <button className="text-white/60 hover:text-white hover:scale-110 transition-all">
-          <SettingsIcon size={24} />
-        </button>
-      </aside>
 
       {/* Hero Section */}
       <section className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] px-8 relative z-10">
