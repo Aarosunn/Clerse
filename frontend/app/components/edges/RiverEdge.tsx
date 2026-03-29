@@ -110,7 +110,7 @@ function RiverEdge({
 
   useEffect(() => {
     let animationFrameId: number;
-    let startTime = performance.now();
+    const startTime = performance.now();
 
     const animate = (time: number) => {
       // Calculate a phase shift based on time to make the wave flow

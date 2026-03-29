@@ -18,12 +18,18 @@ export function getEdgeParams(source: Node, target: Node) {
 }
 
 function getNodeIntersection(intersectionNode: Node, targetNode: Node) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const intersectPos = (intersectionNode as any).internals?.positionAbsolute ?? intersectionNode.position;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const intersectWidth = intersectionNode.measured?.width ?? (intersectionNode as any).width ?? 0;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const intersectHeight = intersectionNode.measured?.height ?? (intersectionNode as any).height ?? 0;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const targetPos = (targetNode as any).internals?.positionAbsolute ?? targetNode.position;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const targetWidth = targetNode.measured?.width ?? (targetNode as any).width ?? 0;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const targetHeight = targetNode.measured?.height ?? (targetNode as any).height ?? 0;
 
   const w = intersectWidth / 2;
@@ -50,8 +56,11 @@ function getNodeIntersection(intersectionNode: Node, targetNode: Node) {
 }
 
 function getEdgePosition(node: Node, intersectionPoint: { x: number; y: number }) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const nPos = (node as any).internals?.positionAbsolute ?? node.position;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const nWidth = node.measured?.width ?? (node as any).width ?? 0;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const nHeight = node.measured?.height ?? (node as any).height ?? 0;
 
   const nx = Math.round(nPos.x);
