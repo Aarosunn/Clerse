@@ -75,3 +75,21 @@ async def test_update_workspace_not_found(client):
         f"/api/workspaces/{uuid.uuid4()}", json={"title": "X"}
     )
     assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_delete_workspace(client):
+    create_resp = await client.post("/api/workspaces", json={"title": "To Delete"})
+    workspace_id = create_resp.json()["id"]
+
+    response = await client.delete(f"/api/workspaces/{workspace_id}")
+    assert response.status_code == 204
+
+    get_resp = await client.get(f"/api/workspaces/{workspace_id}")
+    assert get_resp.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_delete_workspace_not_found(client):
+    response = await client.delete(f"/api/workspaces/{uuid.uuid4()}")
+    assert response.status_code == 404

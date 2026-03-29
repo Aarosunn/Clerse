@@ -43,3 +43,10 @@ async def update_workspace(
     if workspace is None:
         raise HTTPException(status_code=404, detail="Workspace not found")
     return workspace
+
+
+@router.delete("/{workspace_id}", status_code=204)
+async def delete_workspace(workspace_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+    deleted = await workspace_service.delete_workspace(workspace_id, db)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Workspace not found")
