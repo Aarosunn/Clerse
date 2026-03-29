@@ -21,3 +21,11 @@ router = APIRouter(prefix="/api/workspaces", tags=["workspaces"])
 async def create_workspace(body: WorkspaceCreate, db: AsyncSession = Depends(get_db)):
     workspace = await workspace_service.create_workspace(body.title, db)
     return workspace
+
+
+@router.get("/{workspace_id}", response_model=WorkspaceGetResponse)
+async def get_workspace(workspace_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+    workspace = await workspace_service.get_workspace(workspace_id, db)
+    if workspace is None:
+        raise HTTPException(status_code=404, detail="Workspace not found")
+    return workspace
