@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.core.database import engine
-from app.routers import workspaces, chat, extract
+from app.routers import workspaces, chat, extract, files as files_router
 
 
 @asynccontextmanager
@@ -28,6 +28,7 @@ app.add_middleware(
 app.include_router(workspaces.router)
 app.include_router(chat.router)
 app.include_router(extract.router)
+app.include_router(files_router.router)
 
 
 @app.get("/")
