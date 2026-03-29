@@ -1,6 +1,5 @@
 # tests/test_branching.py
 import uuid
-import pytest
 from app.schemas.clerse import BranchCreateRequest, BranchCreateResponse
 
 
