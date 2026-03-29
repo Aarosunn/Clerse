@@ -71,6 +71,27 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
 
   const { startConnect: startConnectMode, workspaceId, spawnNode } = useConnectMode();
 
+  // Hydrate message history from DB on mount (fixes refresh + multiplayer blank history)
+  useEffect(() => {
+    if (!workspaceId) return;
+    const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
+    fetch(`${BACKEND}/api/workspaces/${workspaceId}/nodes/${id}/messages`)
+      .then((r) => r.ok ? r.json() : [])
+      .then((rows: { role: string; content: string | null }[]) => {
+        if (rows.length === 0) return;
+        setMessages(
+          rows
+            .filter((r) => r.role === "user" || r.role === "assistant")
+            .map((r) => ({
+              role: r.role as "user" | "assistant",
+              content: [{ type: "text" as const, text: r.content ?? "" }],
+            }))
+        );
+      })
+      .catch(() => {/* keep initialMessages on error */});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { getNode, getEdges, addNodes, addEdges, setNodes } = useReactFlow();

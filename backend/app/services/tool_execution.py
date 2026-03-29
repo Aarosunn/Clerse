@@ -61,7 +61,7 @@ async def _execute_create_branches(
         y_offset = (i - (num - 1) / 2) * 220
         nodes.append({
             "id": child_node_id,
-            "type": "chat",
+            "type": "claude",
             "position": {"x": 400, "y": y_offset},
             "data": {"title": branch["title"]},
         })
@@ -127,7 +127,12 @@ async def _execute_generate_flashcards(
     ))
     await db.commit()
     return {
-        "nodes": [_make_node(node_id, "flashcard", input["title"])],
+        "nodes": [{
+            "id": node_id,
+            "type": "flashcard",
+            "position": {"x": 400, "y": 0},
+            "data": {"title": input["title"], "cards": input["cards"]},
+        }],
         "edges": [_make_edge(source_node_id, node_id)],
     }
 

@@ -19,6 +19,7 @@ async def post_chat(body: ChatRequest, db: AsyncSession = Depends(get_db)):
             user_content=body.content,
             connected_node_ids=body.connected_node_ids,
             model=body.model,
+            system_override=body.system_override,
             db=db,
         ),
         media_type="text/event-stream",

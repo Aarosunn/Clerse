@@ -105,8 +105,8 @@ async def extract_youtube(
     db: AsyncSession,
 ) -> dict:
     video_id = _parse_video_id(url)
-    transcript_entries = YouTubeTranscriptApi.get_transcript(video_id)
-    transcript = " ".join(entry["text"] for entry in transcript_entries)
+    fetched = YouTubeTranscriptApi().fetch(video_id)
+    transcript = " ".join(snippet.text for snippet in fetched)
 
     await _upsert_file(
         workspace_id=workspace_id,

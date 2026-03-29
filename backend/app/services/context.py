@@ -102,13 +102,21 @@ async def assemble_context(
 
     for linked_id in connected_node_ids:
         linked_node = find_node_in_canvas(canvas, linked_id)
-        if not linked_node:
-            continue
-        node_type = linked_node.get("type", "")
+        node_type = linked_node.get("type", "") if linked_node else ""
 
-        if node_type == "chat" or not linked_node:
-            # Also handles stale canvas_state: if node isn't in canvas yet (debounced
-            # save hasn't fired), try fetching messages from DB anyway.
+        if not linked_node:
+            # Canvas state is stale (debounced save hasn't fired yet).
+            # Fall back to DB: check for messages (chat node) and file content.
+            msgs = await get_node_messages(workspace_id, linked_id, db)
+            linked_messages.extend(msgs)
+            file = await get_node_file(workspace_id, linked_id, db)
+            if file:
+                if file.content_type == "application/pdf" and file.file_data:
+                    prepend_blocks.append(build_file_block(file))
+                elif file.content_text:
+                    artifact_refs.append(f"## Context\n{file.content_text}")
+
+        elif node_type == "claude":
             msgs = await get_node_messages(workspace_id, linked_id, db)
             linked_messages.extend(msgs)
 
