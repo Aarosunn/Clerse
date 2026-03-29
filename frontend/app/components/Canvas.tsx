@@ -4,6 +4,7 @@ import { createContext, useCallback, useState, useEffect, useContext, useRef } f
 import {
   ReactFlow,
   Edge,
+  EdgeTypes,
   Node,
   NodeTypes,
   addEdge,
@@ -29,6 +30,7 @@ import YouTubeNode from "./nodes/YouTubeNode";
 import ArticleNode from "./nodes/ArticleNode";
 import ImageNode from "./nodes/ImageNode";
 import FlashcardNode from "./nodes/FlashcardNode";
+import RiverEdge from "./edges/RiverEdge";
 import {
   SparkleIcon,
   PdfIcon,
@@ -41,11 +43,13 @@ import {
 /* ── Connect mode context ── */
 interface ConnectContextValue {
   connectingFrom: string | null;
-  startConnect: (nodeId: string) => void;
+  cachedMessages: Message[] | null;
+  startConnect: (nodeId: string, messages?: Message[]) => void;
 }
 
 export const ConnectContext = createContext<ConnectContextValue>({
   connectingFrom: null,
+  cachedMessages: null,
   startConnect: () => {},
 });
 

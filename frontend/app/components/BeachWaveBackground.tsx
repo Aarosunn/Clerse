@@ -87,96 +87,47 @@ uniform vec2  uResolution;
 
 varying vec2 vUv;
 
-vec3 posterize3(vec3 val, float steps) {
-  return floor(val * steps + 0.5) / steps;
-}
-
 void main() {
   // uv: top of screen = 0 (ocean), bottom = 1 (sand)
   vec2 uv = vec2(vUv.x, 1.0 - vUv.y);
 
-  // Pixel grid for sand grain
-  float pixelSize = 200.0;
-  vec2 pixelUv = floor(vUv * pixelSize) / pixelSize;
-
-  // ─── Fixed shoreline with natural wave lapping ───
-  // Shoreline sits at ~55% from top — water is top half, sand is bottom half
+  // ─── Fixed shoreline with gentle lapping ───
   float shoreCenter = 0.55;
 
-  // Overlapping wave cycles — each one is a "wave" rolling in and back out
-  // Different speeds and phases so they layer naturally
+  // Overlapping wave cycles for natural back-and-forth
   float wave1 = sin(uTime * uSpeed * 0.7) * 0.04;
   float wave2 = sin(uTime * uSpeed * 1.1 + 2.0) * 0.025;
   float wave3 = sin(uTime * uSpeed * 1.8 + 4.5) * 0.015;
-
   float waveOffset = wave1 + wave2 + wave3;
 
-  // Noise along the shoreline for organic, curvy edge
+  // Smooth noise along the shoreline for organic edge
   float n1 = snoise(vec2(uv.x * 3.0 + uTime * 0.12, uTime * 0.08)) * 0.05;
   float n2 = snoise(vec2(uv.x * 7.0 - uTime * 0.2, uTime * 0.1 + 5.0)) * 0.02;
-
   float shoreline = shoreCenter + waveOffset + n1 + n2;
 
-  // ─── Water depth: positive = in water, negative = on sand ───
+  // ─── Water depth ───
   float waterDepth = shoreline - uv.y;
-
-  // ─── Water mask ───
   float inWater = smoothstep(-0.005, 0.01, waterDepth);
 
-  // ─── Foam: white wash at the edge ───
-  // Wide soft foam wash
-  float foamWash = smoothstep(-0.008, 0.005, waterDepth) * (1.0 - smoothstep(0.005, 0.10, waterDepth));
+  // ─── Foam — single clean white edge ───
+  float foam = smoothstep(-0.006, 0.004, waterDepth) * (1.0 - smoothstep(0.004, 0.08, waterDepth));
 
-  // Bright foam crescent right at the waterline
-  float foamLine = smoothstep(-0.003, 0.003, waterDepth) * (1.0 - smoothstep(0.003, 0.03, waterDepth));
+  // Wet sand — subtle darkening just below waterline
+  float wetSand = smoothstep(0.0, 0.05, -waterDepth) * (1.0 - smoothstep(0.05, 0.12, -waterDepth));
 
-  // Foam ribbons — wispy streaks in shallow water
-  float ribbonNoise = snoise(vec2(uv.x * 10.0 + uTime * 0.3, uv.y * 8.0 - uTime * 0.12));
-  float foamRibbons = smoothstep(0.01, 0.05, waterDepth) * (1.0 - smoothstep(0.05, 0.18, waterDepth));
-  foamRibbons *= smoothstep(0.4, 0.7, ribbonNoise) * 0.4;
-
-  // Wet sand — thin dark strip just below the waterline
-  float wetSand = smoothstep(0.0, 0.06, -waterDepth) * (1.0 - smoothstep(0.06, 0.14, -waterDepth));
-
-  // ─── Water color: shallow → deep gradient ───
+  // ─── Water color: smooth shallow → deep ───
   float depthNorm = smoothstep(0.0, 0.45, waterDepth);
   vec3 waterColor = mix(uColorShallow, uColorDeep, depthNorm);
 
-  // Subtle moving caustic variation in the water
-  float caustic = snoise(vec2(uv.x * 6.0 + uTime * 0.08, uv.y * 4.0 - uTime * 0.05));
-  waterColor += caustic * 0.03;
-
-  // ─── Sand: warm golden with pixelated grain ───
+  // ─── Sand: clean flat color ───
   vec3 sandColor = uColorSand;
-  float sandGrain = snoise(pixelUv * 35.0) * 0.03;
-  sandColor += sandGrain;
-  // Warmth variation
-  float warmth = snoise(pixelUv * 6.0 + 100.0) * 0.025;
-  sandColor.r += warmth;
-  sandColor.g += warmth * 0.6;
-
-  vec3 wetSandColor = sandColor * 0.80;
+  vec3 wetSandColor = sandColor * 0.82;
 
   // ─── Compositing ───
   vec3 color = sandColor;
-
-  // Wet sand strip
-  color = mix(color, wetSandColor, wetSand * 0.7);
-
-  // Water
+  color = mix(color, wetSandColor, wetSand * 0.6);
   color = mix(color, waterColor, inWater);
-
-  // Foam wash
-  color = mix(color, vec3(1.0, 0.99, 0.97), foamWash * 0.5);
-
-  // Foam ribbons
-  color = mix(color, vec3(1.0, 0.99, 0.97), foamRibbons);
-
-  // Bright foam crescent
-  color = mix(color, vec3(1.0), foamLine * 0.9);
-
-  // Subtle posterize for artistic feel
-  color = posterize3(color, 28.0);
+  color = mix(color, vec3(1.0), foam * 0.7);
 
   gl_FragColor = vec4(color, 1.0);
 }

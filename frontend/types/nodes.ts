@@ -22,6 +22,7 @@ export interface ClaudeNodeData extends BaseNodeData {
   parentNodeId?: string;
   model: string;
   initialMessages?: Message[];
+  referencedMessages?: Message[];
 }
 
 export interface PDFNodeData extends BaseNodeData {

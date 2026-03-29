@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Manrope, Plus_Jakarta_Sans } from "next/font/google";
+import { Manrope, Plus_Jakarta_Sans, Lobster } from "next/font/google";
 import "./globals.css";
 import "katex/dist/katex.min.css";
 
@@ -15,6 +15,13 @@ const plusJakartaSans = Plus_Jakarta_Sans({
   display: "swap",
 });
 
+const lobster = Lobster({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-sacrifice",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "Clerse | Oceanic Workspace",
   description: "Spatial infinite canvas for Claude conversations.",
@@ -26,7 +33,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`light ${manrope.variable} ${plusJakartaSans.variable}`}
+      className={`light ${manrope.variable} ${plusJakartaSans.variable} ${lobster.variable}`}
     >
       <body className="bg-surface text-on-surface font-body selection:bg-secondary-container selection:text-on-secondary-container antialiased">
         {children}

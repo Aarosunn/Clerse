@@ -102,9 +102,9 @@ export default function LandingPage() {
       {/* Top Navigation */}
       <nav className="flex justify-between items-center px-12 py-6 relative z-10">
         {/* Left: Brand */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 text-white">
           <BookIcon size={28} />
-          <span className="font-headline italic font-bold text-3xl text-primary">
+          <span className="font-sacrifice text-3xl drop-shadow-md">
             Clerse
           </span>
         </div>
@@ -115,7 +115,7 @@ export default function LandingPage() {
             <a
               key={link}
               href="#"
-              className="font-label text-sm text-outline hover:text-primary transition-colors uppercase tracking-widest"
+              className="font-label text-sm text-white/70 hover:text-white transition-colors uppercase tracking-widest"
             >
               {link}
             </a>
@@ -124,12 +124,12 @@ export default function LandingPage() {
 
         {/* Right: Actions */}
         <div className="flex items-center gap-4">
-          <button className="p-2 text-outline hover:text-primary transition-colors">
+          <button className="p-2 text-white/70 hover:text-white transition-colors">
             <AccountCircleIcon size={24} />
           </button>
           <button
             onClick={createWorkspace}
-            className="bg-tertiary text-on-tertiary font-label text-xs tracking-widest uppercase rounded-full px-6 py-2 hover:brightness-110 transition-all"
+            className="bg-white/20 backdrop-blur-sm text-white font-label text-xs tracking-widest uppercase rounded-full px-6 py-2 hover:bg-white/30 transition-all border border-white/30"
           >
             Launch App
           </button>
@@ -137,17 +137,17 @@ export default function LandingPage() {
       </nav>
 
       {/* Floating Left Sidebar */}
-      <aside className="floating-sidebar hidden lg:flex">
-        <button className="text-outline hover:text-primary hover:scale-110 transition-all">
+      <aside className="floating-sidebar hidden lg:flex !bg-white/15 !backdrop-blur-md !shadow-none border border-white/20">
+        <button className="text-white/60 hover:text-white hover:scale-110 transition-all">
           <DashboardIcon size={24} />
         </button>
-        <button className="text-outline hover:text-primary hover:scale-110 transition-all">
+        <button className="text-white/60 hover:text-white hover:scale-110 transition-all">
           <FolderIcon size={24} />
         </button>
-        <button className="text-outline hover:text-primary hover:scale-110 transition-all">
+        <button className="text-white/60 hover:text-white hover:scale-110 transition-all">
           <HistoryIcon size={24} />
         </button>
-        <button className="text-outline hover:text-primary hover:scale-110 transition-all">
+        <button className="text-white/60 hover:text-white hover:scale-110 transition-all">
           <SettingsIcon size={24} />
         </button>
       </aside>
@@ -155,12 +155,12 @@ export default function LandingPage() {
       {/* Hero Section */}
       <section className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] px-8 relative z-10">
         {/* Large Title */}
-        <h1 className="font-headline italic font-bold text-primary text-[8rem] md:text-[12rem] tracking-tighter leading-none mb-8">
+        <h1 className="font-sacrifice text-white text-[8rem] md:text-[12rem] leading-none mb-8 drop-shadow-lg">
           Clerse
         </h1>
 
         {/* Subheadline */}
-        <p className="font-body text-on-surface-variant text-xl max-w-2xl mx-auto text-center leading-relaxed mb-12">
+        <p className="font-body text-white/80 text-xl max-w-2xl mx-auto text-center leading-relaxed mb-12 drop-shadow-sm">
           The fluid spatial canvas for your AI-powered thinking. Move beyond
           boxes and lines into a natural landscape for ideas.
         </p>
@@ -169,12 +169,14 @@ export default function LandingPage() {
         <div className="flex items-center justify-center gap-6">
           <button
             onClick={createWorkspace}
-            className="cta-primary flex items-center gap-2"
+            className="bg-white text-[#1a9e9e] font-label font-semibold px-8 py-4 rounded-full flex items-center gap-2 hover:bg-white/90 transition-all shadow-lg"
           >
             Create Workspace
             <ArrowForwardIcon size={20} />
           </button>
-          <button className="cta-secondary">View Demo</button>
+          <button className="bg-white/15 backdrop-blur-sm text-white font-label font-semibold px-8 py-4 rounded-full border border-white/30 hover:bg-white/25 transition-all">
+            View Demo
+          </button>
         </div>
       </section>
 
@@ -182,10 +184,10 @@ export default function LandingPage() {
       <footer className="flex justify-between items-end px-12 pb-8 relative z-10 w-full">
         {/* Left: Brand info */}
         <div>
-          <p className="font-headline italic font-bold text-xl text-primary mb-2">
+          <p className="font-sacrifice text-xl text-white mb-2 drop-shadow-sm">
             Clerse AI
           </p>
-          <p className="font-label text-[10px] text-outline uppercase tracking-widest">
+          <p className="font-label text-[10px] text-white/50 uppercase tracking-widest">
             © 2024 CLERSE AI. FLOWING THROUGH THE INFINITE CANVAS.
           </p>
         </div>
@@ -196,7 +198,7 @@ export default function LandingPage() {
             <a
               key={link}
               href="#"
-              className="font-label text-xs uppercase tracking-widest text-primary font-semibold hover:opacity-75 transition-opacity"
+              className="font-label text-xs uppercase tracking-widest text-white/70 font-semibold hover:text-white transition-opacity"
             >
               {link}
             </a>

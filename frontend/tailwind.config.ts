@@ -62,6 +62,7 @@ const config: Config = {
         headline: ["var(--font-manrope)", "sans-serif"],
         body: ["var(--font-manrope)", "sans-serif"],
         label: ["var(--font-plus-jakarta-sans)", "sans-serif"],
+        sacrifice: ["var(--font-sacrifice)", "cursive"],
       },
       borderRadius: {
         DEFAULT: "0.25rem",
