@@ -48,7 +48,9 @@ function buildWavyPath({
     const baseX = sourceX + dx * t;
     const baseY = sourceY + dy * t;
     // Sine displacement perpendicular to the line
-    const wave = Math.sin(t * frequency * Math.PI * 2 + phase) * amplitude;
+    const waveMain = Math.sin(t * frequency * Math.PI * 2 + phase) * amplitude;
+    const waveNoise = Math.sin(t * (frequency * 2.13) * Math.PI * 2 + phase * 1.3) * (amplitude * 0.35);
+    const wave = waveMain + waveNoise;
     // Taper amplitude at endpoints so line connects cleanly
     const taper = Math.sin(t * Math.PI);
     const px = baseX + nx * wave * taper;
@@ -121,8 +123,8 @@ function RiverEdge({
         sourceY,
         targetX,
         targetY,
-        amplitude: 15, // Determines how wide the wave is
-        frequency: 2.5, // Determines how many peaks the wave has
+        amplitude: 8, // Less aggressive width
+        frequency: 1.2, // Smoother and fewer peaks
         phase,
         segments: 64, // Resolution of the curve
       });
@@ -154,13 +156,13 @@ function RiverEdge({
       <path
         ref={pathRef}
         fill="none"
-        stroke="#00BFFF"
+        stroke="#739AB5"
         strokeWidth={6}
-        strokeOpacity={0.8}
+        strokeOpacity={0.6}
         strokeLinecap="round"
         className="river-edge-path"
         style={{
-          filter: "drop-shadow(0 0 4px rgba(0,191,255,0.7))",
+          filter: "drop-shadow(0 0 4px rgba(115,154,181,0.5))",
         }}
       />
     </g>
