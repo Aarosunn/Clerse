@@ -517,6 +517,7 @@ function CanvasInner({ workspaceId }: CanvasProps) {
             onConnect={onConnect}
             nodeTypes={nodeTypes}
             edgeTypes={edgeTypes}
+            deleteKeyCode={null}
             onNodeClick={(_event: React.MouseEvent, node: Node) => {
               if (connectingFrom) {
                 completeConnect(node.id);
