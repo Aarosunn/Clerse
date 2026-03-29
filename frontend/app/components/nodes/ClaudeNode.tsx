@@ -2,11 +2,14 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { createPortal } from "react-dom";
+import dynamic from "next/dynamic";
 import { Handle, Position, NodeProps, useReactFlow, NodeResizer, Node, Edge } from "@xyflow/react";
-import ReactMarkdown from "react-markdown";
-import remarkMath from "remark-math";
-import rehypeKatex from "rehype-katex";
 import { ClaudeNodeData } from "@/types/nodes";
+
+const MarkdownRenderer = dynamic(
+  () => import("../MarkdownRenderer"),
+  { ssr: false, loading: () => <span className="text-sm text-on-surface/40">Loading…</span> }
+);
 import { Message } from "@/types/messages";
 import { buildUserMessage, buildAssistantMessage, getTextContent } from "@/lib/conversations";
 import { useConnectMode } from "../Canvas";
@@ -587,12 +590,9 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
 
                   <div className="flex-1 min-w-0">
                     <div className="font-body text-sm text-on-surface leading-relaxed prose prose-sm max-w-none">
-                      <ReactMarkdown
-                        remarkPlugins={[remarkMath]}
-                        rehypePlugins={[rehypeKatex]}
-                      >
+                      <MarkdownRenderer>
                         {getTextContent(msg.content)}
-                      </ReactMarkdown>
+                      </MarkdownRenderer>
                     </div>
 
                     <div className="flex items-center gap-3 mt-3">
@@ -656,12 +656,9 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
                 <SparkleIcon size={14} className="text-white" />
               </div>
               <div className="font-body text-sm text-on-surface leading-relaxed flex-1 prose prose-sm max-w-none">
-                <ReactMarkdown
-                  remarkPlugins={[remarkMath]}
-                  rehypePlugins={[rehypeKatex]}
-                >
+                <MarkdownRenderer>
                   {streamText}
-                </ReactMarkdown>
+                </MarkdownRenderer>
                 <span
                   className="inline-block w-0.5 h-3.5 align-middle ml-0.5 animate-pulse"
                   style={{ background: "#00668a" }}

@@ -1,11 +1,14 @@
 "use client";
 
 import { useState, useRef } from "react";
+import dynamic from "next/dynamic";
 import { Handle, Position, NodeProps, NodeResizer } from "@xyflow/react";
-import ReactMarkdown from "react-markdown";
-import remarkMath from "remark-math";
-import rehypeKatex from "rehype-katex";
 import { PDFDocNodeData } from "@/types/nodes";
+
+const MarkdownRenderer = dynamic(
+  () => import("../MarkdownRenderer"),
+  { ssr: false, loading: () => <span className="text-sm text-on-surface/40">Loading…</span> }
+);
 import { MarkdownIcon, SparkleIcon, DownloadIcon } from "../Icons";
 import { useConnectMode } from "../Canvas";
 import WindowControls from "./WindowControls";
@@ -175,12 +178,9 @@ export default function PDFDocNode({ id, data: rawData }: NodeProps<any>) {
                 }}
               >
                 <div className="font-body text-sm text-on-surface leading-relaxed prose prose-sm max-w-none">
-                  <ReactMarkdown
-                    remarkPlugins={[remarkMath]}
-                    rehypePlugins={[rehypeKatex]}
-                  >
+                  <MarkdownRenderer>
                     {markdown}
-                  </ReactMarkdown>
+                  </MarkdownRenderer>
                   {generating && (
                     <span
                       className="inline-block w-0.5 h-3.5 align-middle ml-0.5 animate-pulse"

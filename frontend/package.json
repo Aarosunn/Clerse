@@ -22,7 +22,6 @@
     "react": "^18",
     "react-dom": "^18",
     "react-markdown": "^10.1.0",
-    "react-pdf": "^10.4.1",
     "rehype-katex": "^7.0.1",
     "remark-math": "^6.0.0"
   },

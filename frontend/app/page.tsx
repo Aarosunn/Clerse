@@ -1,11 +1,20 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import {
   ArrowForwardIcon,
 } from "./components/Icons";
-import BeachWaveBackground from "./components/BeachWaveBackground";
-import SplitText from "./components/SplitText";
+
+const BeachWaveBackground = dynamic(
+  () => import("./components/BeachWaveBackground"),
+  { ssr: false }
+);
+
+const SplitText = dynamic(
+  () => import("./components/SplitText"),
+  { ssr: false }
+);
 
 
 /* ── Minimal Material Symbol icons for landing page ── */

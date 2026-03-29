@@ -30,39 +30,6 @@ function wrap(
   );
 }
 
-/* ── Canvas tools ── */
-export function PanToolIcon(p: IconProps) {
-  return wrap(
-    <>
-      <path d="M8 13V5.5a1.5 1.5 0 0 1 3 0V12" />
-      <path d="M11 11.5V3.5a1.5 1.5 0 0 1 3 0V12" />
-      <path d="M14 10.5V5.5a1.5 1.5 0 0 1 3 0V12" />
-      <path d="M17 11.5V8.5a1.5 1.5 0 0 1 3 0V16a6 6 0 0 1-6 6h-2a6 6 0 0 1-6-6V9.5a1.5 1.5 0 0 1 3 0V12" />
-    </>,
-    p
-  );
-}
-
-export function SelectIcon(p: IconProps) {
-  return wrap(
-    <>
-      <path d="M5 3l14 8-6 2-4 6z" fill="currentColor" stroke="currentColor" strokeWidth={1.2} />
-    </>,
-    p
-  );
-}
-
-export function ConnectIcon(p: IconProps) {
-  return wrap(
-    <>
-      <circle cx="5" cy="12" r="2" fill="currentColor" strokeWidth={0} />
-      <circle cx="19" cy="12" r="2" fill="currentColor" strokeWidth={0} />
-      <path d="M7 12c3-4 7 4 10 0" />
-    </>,
-    p
-  );
-}
-
 /* ── Node type icons ── */
 export function SparkleIcon(p: IconProps) {
   return wrap(
@@ -221,28 +188,6 @@ export function ThumbUpIcon(p: IconProps) {
     <>
       <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
       <path d="M14 2l-3 7h5.5a2 2 0 0 1 1.86 2.73l-2.36 6A2 2 0 0 1 14.14 20H7V11l3.5-9z" />
-    </>,
-    p
-  );
-}
-
-export function ChecklistIcon(p: IconProps) {
-  return wrap(
-    <>
-      <path d="M4 7l2 2 4-4" />
-      <path d="M4 17l2 2 4-4" />
-      <path d="M14 7h6" />
-      <path d="M14 17h6" />
-    </>,
-    p
-  );
-}
-
-export function CloseIcon(p: IconProps) {
-  return wrap(
-    <>
-      <path d="M18 6L6 18" />
-      <path d="M6 6l12 12" />
     </>,
     p
   );
@@ -408,134 +353,6 @@ export function DescriptionIcon(p: IconProps) {
   );
 }
 
-/* ── Landing page icons ── */
-export function DashboardIcon(p: IconProps) {
-  return wrap(
-    <>
-      <rect x="3" y="3" width="7" height="9" rx="1.5" />
-      <rect x="14" y="3" width="7" height="5" rx="1.5" />
-      <rect x="14" y="12" width="7" height="9" rx="1.5" />
-      <rect x="3" y="16" width="7" height="5" rx="1.5" />
-    </>,
-    p
-  );
-}
-
-export function WavesIcon(p: IconProps) {
-  return wrap(
-    <>
-      <path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" />
-      <path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" />
-      <path d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" />
-    </>,
-    p
-  );
-}
-
-export function TsunamiIcon(p: IconProps) {
-  return wrap(
-    <>
-      <path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" />
-      <path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" />
-      <path d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" />
-    </>,
-    p
-  );
-}
-
-export function ListIcon(p: IconProps) {
-  return wrap(
-    <>
-      <line x1="8" y1="6" x2="21" y2="6" />
-      <line x1="8" y1="12" x2="21" y2="12" />
-      <line x1="8" y1="18" x2="21" y2="18" />
-      <circle cx="4" cy="6" r="1" fill="currentColor" stroke="none" />
-      <circle cx="4" cy="12" r="1" fill="currentColor" stroke="none" />
-      <circle cx="4" cy="18" r="1" fill="currentColor" stroke="none" />
-    </>,
-    p
-  );
-}
-
-export function FolderIcon(p: IconProps) {
-  return wrap(
-    <>
-      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-    </>,
-    p
-  );
-}
-
-export function InsightsIcon(p: IconProps) {
-  return wrap(
-    <>
-      <line x1="18" y1="20" x2="18" y2="10" />
-      <line x1="12" y1="20" x2="12" y2="4" />
-      <line x1="6" y1="20" x2="6" y2="14" />
-    </>,
-    p
-  );
-}
-
-export function HelpIcon(p: IconProps) {
-  return wrap(
-    <>
-      <circle cx="12" cy="12" r="10" />
-      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-      <circle cx="12" cy="17" r="0.5" fill="currentColor" stroke="none" />
-    </>,
-    p
-  );
-}
-
-export function ChatIcon(p: IconProps) {
-  return wrap(
-    <>
-      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-    </>,
-    p
-  );
-}
-
-export function NotificationIcon(p: IconProps) {
-  return wrap(
-    <>
-      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-    </>,
-    p
-  );
-}
-
-export function SettingsIcon(p: IconProps) {
-  return wrap(
-    <>
-      <circle cx="12" cy="12" r="3" />
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-    </>,
-    p
-  );
-}
-
-export function AddIcon(p: IconProps) {
-  return wrap(
-    <>
-      <line x1="12" y1="5" x2="12" y2="19" />
-      <line x1="5" y1="12" x2="19" y2="12" />
-    </>,
-    p
-  );
-}
-
-export function NorthEastIcon(p: IconProps) {
-  return wrap(
-    <>
-      <line x1="7" y1="17" x2="17" y2="7" />
-      <polyline points="7 7 17 7 17 17" />
-    </>,
-    p
-  );
-}
 
 export function TextIcon(p: IconProps) {
   return wrap(
@@ -543,15 +360,6 @@ export function TextIcon(p: IconProps) {
       <path d="M4 7V4h16v3" />
       <path d="M12 4v16" />
       <path d="M8 20h8" />
-    </>,
-    p
-  );
-}
-
-export function WaterDropIcon(p: IconProps) {
-  return wrap(
-    <>
-      <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
     </>,
     p
   );
