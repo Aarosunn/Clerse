@@ -2,7 +2,6 @@
 import uuid
 import pytest
 import base64
-import pytest_asyncio
 from app.schemas.clerse import FileUploadResponse
 from app.models.clerse import File, Workspace
 from app.services.files import upload_file
@@ -20,15 +19,6 @@ def test_file_upload_response_schema():
     assert response.node_id == "node-abc"
     assert response.filename == "photo.png"
     assert response.content_type == "image/png"
-
-
-@pytest_asyncio.fixture
-async def workspace(db):
-    ws = Workspace(title="Upload Test Workspace")
-    db.add(ws)
-    await db.commit()
-    await db.refresh(ws)
-    return ws
 
 
 @pytest.mark.asyncio
