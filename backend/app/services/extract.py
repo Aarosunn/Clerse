@@ -118,6 +118,9 @@ async def extract_youtube(
         db=db,
     )
 
+    # TODO: YouTubeTranscriptApi does not provide the video title; returning
+    # the video ID as a fallback. Resolve actual title via a separate fetch
+    # if needed post-hackathon.
     return {"transcript": transcript, "title": video_id}
 
 
@@ -129,6 +132,8 @@ async def extract_article(
     db: AsyncSession,
 ) -> dict:
     downloaded = trafilatura.fetch_url(url)
+    if not downloaded:
+        return {"text": "", "title": url}
     text = trafilatura.extract(downloaded) or ""
     metadata = trafilatura.extract_metadata(downloaded)
     title = metadata.title if metadata and metadata.title else url
