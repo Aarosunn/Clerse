@@ -774,11 +774,11 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
           <NodeResizer
             minWidth={480}
             minHeight={260}
-            lineStyle={{ stroke: "rgba(71,96,131,0.3)", strokeWidth: 1 }}
+            lineStyle={{ stroke: "rgba(71,96,131,0.3)", strokeWidth: 6, strokeOpacity: 0 }}
             handleStyle={{
-              width: 8,
-              height: 8,
-              borderRadius: 4,
+              width: 14,
+              height: 14,
+              borderRadius: 7,
               background: "#476083",
               border: "none",
               opacity: 0.5,

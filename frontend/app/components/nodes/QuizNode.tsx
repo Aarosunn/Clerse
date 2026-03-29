@@ -111,7 +111,7 @@ export default function QuizNode({ id, data: rawData }: NodeProps<any>) {
       className="rounded-xl flex flex-col animate-fade-scale overflow-hidden"
       style={{ width: "100%", height: "100%", background: "#ffffff", boxShadow: "0 8px 24px rgba(28,28,25,0.08)", border: "1px solid rgba(188,200,209,0.15)" }}
     >
-      <NodeResizer minWidth={280} minHeight={200} color={ACCENT} />
+      <NodeResizer minWidth={280} minHeight={200} color={ACCENT} lineStyle={{ strokeWidth: 6, strokeOpacity: 0 }} handleStyle={{ width: 14, height: 14, borderRadius: 7 }} />
       <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
 
       {/* Header */}

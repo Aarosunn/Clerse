@@ -58,7 +58,7 @@ export default function TextNode({ id, data: rawData }: NodeProps<any>) {
         border: "1px solid rgba(188,200,209,0.15)",
       }}
     >
-      <NodeResizer minWidth={240} minHeight={120} color={ACCENT} />
+      <NodeResizer minWidth={240} minHeight={120} color={ACCENT} lineStyle={{ strokeWidth: 6, strokeOpacity: 0 }} handleStyle={{ width: 14, height: 14, borderRadius: 7 }} />
       <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
 
       {/* Header */}

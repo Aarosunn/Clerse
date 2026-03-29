@@ -101,7 +101,7 @@ export default function PDFNode({ id, data: rawData }: NodeProps<any>) {
         border: "1px solid rgba(188,200,209,0.20)",
       }}
     >
-      <NodeResizer minWidth={280} minHeight={200} color="#a43c12" />
+      <NodeResizer minWidth={280} minHeight={200} color="#a43c12" lineStyle={{ strokeWidth: 6, strokeOpacity: 0 }} handleStyle={{ width: 14, height: 14, borderRadius: 7 }} />
       <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
 
       {/* Header */}
