@@ -95,3 +95,18 @@ class FileUploadResponse(BaseModel):
     content_type: str
 
     model_config = {"from_attributes": True}
+
+
+class BranchCreateRequest(BaseModel):
+    source_message_ids: list[uuid.UUID]
+    title: str
+    child_node_id: str
+
+
+class BranchCreateResponse(BaseModel):
+    branch_id: uuid.UUID
+    parent_node_id: str
+    child_node_id: str
+    source_message_ids: list[uuid.UUID]
+
+    model_config = {"from_attributes": True}
