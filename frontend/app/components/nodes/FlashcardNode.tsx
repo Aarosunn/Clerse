@@ -9,21 +9,22 @@ import WindowControls from "./WindowControls";
 
 const ACCENT = "#c89b3c";
 
-const FLASHCARD_SYSTEM_PROMPT = `Generate flashcards from the provided context.
-Respond ONLY with a valid JSON array. No preamble, no markdown.
-Format: [{"front": "question", "back": "answer"}]`;
+const FLASHCARD_SYSTEM_PROMPT =
+  "Generate flashcards from the provided content. " +
+  "Respond ONLY with a valid JSON array, no preamble, no markdown fences. " +
+  'Format: [{"front": "question", "back": "answer"}]';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function FlashcardNode({ id, data: rawData }: NodeProps<any>) {
   const data = rawData as FlashcardNodeData;
-  const [cards, setCards] = useState<FlashCard[]>(data.cards);
+  const [cards, setCards] = useState<FlashCard[]>(data.cards ?? []);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [sourceText, setSourceText] = useState("");
   const [minimized, setMinimized] = useState(false);
   const streamRef = useRef("");
-  const { startConnect: startConnectMode } = useConnectMode();
+  const { startConnect: startConnectMode, workspaceId } = useConnectMode();
 
   function handleConnect() {
     if (cards.length === 0) return;
@@ -40,31 +41,52 @@ export default function FlashcardNode({ id, data: rawData }: NodeProps<any>) {
     setGenerating(true);
     streamRef.current = "";
 
-    const res = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "claude-haiku-4-5",
-        system: FLASHCARD_SYSTEM_PROMPT,
-        messages: [{ role: "user", content: [{ type: "text", text: sourceText }] }],
-      }),
-    });
-
-    const reader = res.body!.getReader();
-    const decoder = new TextDecoder();
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      streamRef.current += decoder.decode(value, { stream: true });
-    }
-
     try {
-      const parsed: FlashCard[] = JSON.parse(streamRef.current);
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          workspace_id: workspaceId,
+          node_id: id,
+          content: sourceText,
+          model: "claude-haiku-4-5",
+          connected_node_ids: [],
+          system_override: FLASHCARD_SYSTEM_PROMPT,
+        }),
+      });
+
+      if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const raw = line.slice(6).trim();
+          if (!raw) continue;
+          try {
+            const event = JSON.parse(raw);
+            if (event.type === "token") streamRef.current += event.text as string;
+          } catch { /* skip malformed lines */ }
+        }
+      }
+
+      const jsonMatch = streamRef.current.match(/\[[\s\S]*\]/);
+      const parsed: FlashCard[] = JSON.parse(jsonMatch?.[0] ?? streamRef.current);
+      if (!Array.isArray(parsed) || parsed.length === 0) throw new Error("empty result");
       setCards(parsed);
       setCurrentIndex(0);
       setFlipped(false);
     } catch {
-      setCards([{ front: "Parse error", back: streamRef.current.slice(0, 200) }]);
+      setCards([{ front: "Could not generate", back: "Check backend connection." }]);
+      setCurrentIndex(0);
     }
     setGenerating(false);
   }

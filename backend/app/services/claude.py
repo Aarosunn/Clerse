@@ -28,6 +28,7 @@ async def stream_chat(
     connected_node_ids: list[str],
     model: str,
     db: AsyncSession,
+    system_override: str | None = None,
 ) -> AsyncGenerator[str, None]:
     # 0. Ensure workspace exists (frontend may create UUID client-side before DB record exists)
     existing = await db.get(Workspace, workspace_id)
@@ -49,6 +50,8 @@ async def stream_chat(
     system_prompt, messages, context_truncated = await assemble_context(
         workspace_id, node_id, connected_node_ids, db
     )
+    if system_override is not None:
+        system_prompt = system_override
 
     # 3. First stream — may include tool calls
     accumulated_text = ""
@@ -59,12 +62,16 @@ async def stream_chat(
     # Track the index in assistant_content_blocks for the current open text block
     _current_text_block_idx: int | None = None
 
+    # When system_override is set (e.g. direct flashcard generation), strip tools
+    # so Claude returns plain text instead of calling canvas tools.
+    active_tools = [] if system_override is not None else TOOL_DEFINITIONS
+
     async with anthropic_client.messages.stream(
         model=model,
         max_tokens=settings.ANTHROPIC_MAX_TOKENS,
         system=system_prompt,
         messages=messages,
-        tools=TOOL_DEFINITIONS,
+        tools=active_tools,
     ) as stream:
         async for event in stream:
             if event.type == "content_block_start" and hasattr(event, "content_block"):
@@ -141,7 +148,7 @@ async def stream_chat(
             max_tokens=settings.ANTHROPIC_MAX_TOKENS,
             system=system_prompt,
             messages=followup_messages,
-            tools=TOOL_DEFINITIONS,
+            tools=active_tools,
         ) as stream2:
             async for event in stream2:
                 if event.type == "content_block_delta" and hasattr(event.delta, "text"):

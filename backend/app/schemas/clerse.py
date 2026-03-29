@@ -45,6 +45,7 @@ class ChatRequest(BaseModel):
     content: str
     model: str = "claude-sonnet-4-6"
     connected_node_ids: list[str] = []
+    system_override: str | None = None
 
 
 class MessageResponse(BaseModel):
