@@ -3,7 +3,6 @@ frontend/.claude
 NAVY_ACCENTED_DESIGN.md
 CHAT_NODE_DESIGN.md
 DESIGN.md
-FRONTEND_TODO.md
 
 node_modules/
 .next/
@@ -13,3 +12,11 @@ __pycache__/
 venv/
 .vercel/
 docs/superpowers/plans/2026-03-28-clerse-design-implementation.md
+
+# Auto-generated plans and refs
+BEACH_BACKGROUND_DESIGN.md
+CHAT_NODE_IMPLEMENTATION.md
+DRAG_OPTIMIZATION_PLAN.md
+FRONTEND_TODO.md
+LANDING_PAGE_IMPLEMENTATION.md
+chat_node_reference.png
