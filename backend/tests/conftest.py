@@ -1,9 +1,12 @@
 # tests/conftest.py
+import os
 import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.pool import StaticPool
 from httpx import ASGITransport, AsyncClient
+
+os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///:memory:")
 
 from app.core.database import get_db
 from app.models.clerse import Base
