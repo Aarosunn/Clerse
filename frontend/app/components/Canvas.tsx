@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useState, useEffect } from "react";
+import { createContext, useCallback, useState, useEffect, useContext } from "react";
 import {
   ReactFlow,
   Edge,
+  Node,
   NodeTypes,
   addEdge,
   Connection,
@@ -29,6 +30,21 @@ import ArticleNode from "./nodes/ArticleNode";
 import ImageNode from "./nodes/ImageNode";
 import FlashcardNode from "./nodes/FlashcardNode";
 
+/* ── Connect mode context ── */
+interface ConnectContextValue {
+  connectingFrom: string | null;
+  startConnect: (nodeId: string) => void;
+}
+
+export const ConnectContext = createContext<ConnectContextValue>({
+  connectingFrom: null,
+  startConnect: () => {},
+});
+
+export function useConnectMode() {
+  return useContext(ConnectContext);
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const nodeTypes: NodeTypes = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -53,7 +69,55 @@ function CanvasInner({ workspaceId }: CanvasProps) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [nodes, , onNodesChange] = useNodesState<any>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
-  const { addNodes, addEdges } = useReactFlow();
+  const { addNodes, addEdges, getNode, flowToScreenPosition } = useReactFlow();
+
+  /* ── Connect mode state ── */
+  const [connectingFrom, setConnectingFrom] = useState<string | null>(null);
+  const [mouseScreen, setMouseScreen] = useState<{ x: number; y: number } | null>(null);
+
+  function startConnect(nodeId: string) {
+    setConnectingFrom(nodeId);
+  }
+
+  function completeConnect(targetNodeId: string) {
+    if (connectingFrom && connectingFrom !== targetNodeId) {
+      setEdges((eds) =>
+        addEdge(
+          {
+            id: `${connectingFrom}-${targetNodeId}`,
+            source: connectingFrom,
+            target: targetNodeId,
+            animated: true,
+            style: { stroke: "#00668a", strokeWidth: 1.5 },
+          },
+          eds
+        )
+      );
+    }
+    setConnectingFrom(null);
+    setMouseScreen(null);
+  }
+
+  function cancelConnect() {
+    setConnectingFrom(null);
+    setMouseScreen(null);
+  }
+
+  // Track mouse for the connection line
+  function handleMouseMove(e: React.MouseEvent) {
+    if (connectingFrom) {
+      setMouseScreen({ x: e.clientX, y: e.clientY });
+    }
+  }
+
+  // Escape key cancels connect mode
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape" && connectingFrom) cancelConnect();
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [connectingFrom]);
 
   /* ── Multiplayer: room activation ── */
   const [roomId, setRoomId] = useState<string | null>(null);
@@ -147,105 +211,160 @@ function CanvasInner({ workspaceId }: CanvasProps) {
     flashcard: "#c89b3c",
   };
 
+  /* ── Connection line: compute source screen position ── */
+  function getSourceScreenPos(): { x: number; y: number } | null {
+    if (!connectingFrom) return null;
+    const sourceNode = getNode(connectingFrom);
+    if (!sourceNode) return null;
+    return flowToScreenPosition({
+      x: sourceNode.position.x + ((sourceNode.measured?.width ?? sourceNode.width ?? 340) / 2),
+      y: sourceNode.position.y + ((sourceNode.measured?.height ?? sourceNode.height ?? 200) / 2),
+    });
+  }
+
+  const sourcePos = connectingFrom ? getSourceScreenPos() : null;
+
   return (
-    <div className="w-full h-full relative overflow-hidden" style={{ background: "#f6f3ee" }}>
-      {/* Layer 0: Interactive dot grid */}
-      <DotGrid />
-
-      {/* Layer 1: Radial ripple — ambient depth */}
+    <ConnectContext.Provider value={{ connectingFrom, startConnect }}>
       <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: "radial-gradient(circle at 50% 50%, #00bdfd 0%, transparent 60%)",
-          opacity: 0.06,
-        }}
-      />
-
-      {/* Layer 2: Animated river flows */}
-      <svg
-        className="absolute inset-0 w-full h-full pointer-events-none"
-        style={{ zIndex: 1 }}
-        preserveAspectRatio="none"
+        className="w-full h-full relative overflow-hidden"
+        style={{ background: "#f6f3ee", cursor: connectingFrom ? "crosshair" : undefined }}
+        onMouseMove={handleMouseMove}
       >
-        <path
-          className="river-path"
-          d="M-100,180 C200,80 500,280 800,180 S1100,80 1600,180"
-          stroke="#00bdfd"
-          strokeWidth="1.5"
-          fill="none"
-          opacity="0.12"
-        />
-        <path
-          className="river-path"
-          d="M-100,380 C200,280 500,480 800,380 S1100,280 1600,380"
-          stroke="#476083"
-          strokeWidth="1"
-          fill="none"
-          opacity="0.08"
-          style={{ animationDelay: "-3s" }}
-        />
-        <path
-          className="river-path"
-          d="M-100,560 C300,460 600,660 900,560 S1200,460 1600,560"
-          stroke="#00bdfd"
-          strokeWidth="0.8"
-          fill="none"
-          opacity="0.07"
-          style={{ animationDelay: "-6s" }}
-        />
-      </svg>
+        {/* Layer 0: Interactive dot grid */}
+        <DotGrid />
 
-      {/* Layer 3: React Flow (transparent bg so layers show through) */}
-      <div className="absolute inset-0" style={{ zIndex: 2 }}>
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          nodeTypes={nodeTypes}
-          fitView
-          fitViewOptions={{ padding: 0.4 }}
-          panOnScroll
-          zoomOnScroll={false}
-          zoomOnPinch
-          style={{ background: "transparent" }}
-          proOptions={{ hideAttribution: false }}
+        {/* Layer 1: Radial ripple — ambient depth */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: "radial-gradient(circle at 50% 50%, #00bdfd 0%, transparent 60%)",
+            opacity: 0.06,
+          }}
+        />
+
+        {/* Layer 2: Animated river flows */}
+        <svg
+          className="absolute inset-0 w-full h-full pointer-events-none"
+          style={{ zIndex: 1 }}
+          preserveAspectRatio="none"
         >
-          <Controls position="bottom-left" style={{ marginBottom: 100 }} />
-          <MiniMap
-            nodeColor={(n) => NODE_COLORS[n.type ?? "claude"] ?? "#476083"}
-            position="bottom-right"
-            style={{ marginBottom: 100 }}
+          <path
+            className="river-path"
+            d="M-100,180 C200,80 500,280 800,180 S1100,80 1600,180"
+            stroke="#00bdfd"
+            strokeWidth="1.5"
+            fill="none"
+            opacity="0.12"
           />
-        </ReactFlow>
-      </div>
+          <path
+            className="river-path"
+            d="M-100,380 C200,280 500,480 800,380 S1100,280 1600,380"
+            stroke="#476083"
+            strokeWidth="1"
+            fill="none"
+            opacity="0.08"
+            style={{ animationDelay: "-3s" }}
+          />
+          <path
+            className="river-path"
+            d="M-100,560 C300,460 600,660 900,560 S1200,460 1600,560"
+            stroke="#00bdfd"
+            strokeWidth="0.8"
+            fill="none"
+            opacity="0.07"
+            style={{ animationDelay: "-6s" }}
+          />
+        </svg>
 
-      {/* Multiplayer cursors — only active when room is joined */}
-      {roomId && process.env.NEXT_PUBLIC_LIVEBLOCKS_PUBLIC_KEY && (
-        <LiveblocksProvider publicApiKey={process.env.NEXT_PUBLIC_LIVEBLOCKS_PUBLIC_KEY}>
-          <RoomProvider
-            id={roomId}
-            initialPresence={{
-              cursor: null,
-              name: `User ${Math.floor(Math.random() * 900 + 100)}`,
-              color: CURSOR_COLORS[Math.floor(Math.random() * CURSOR_COLORS.length)],
+        {/* Layer 3: React Flow (transparent bg so layers show through) */}
+        <div className="absolute inset-0" style={{ zIndex: 2 }}>
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            nodeTypes={nodeTypes}
+            onNodeClick={(_event: React.MouseEvent, node: Node) => {
+              if (connectingFrom) {
+                completeConnect(node.id);
+              }
             }}
+            onPaneClick={() => {
+              if (connectingFrom) cancelConnect();
+            }}
+            fitView
+            fitViewOptions={{ padding: 0.4 }}
+            panOnScroll
+            zoomOnScroll={false}
+            zoomOnPinch
+            style={{ background: "transparent" }}
+            proOptions={{ hideAttribution: false }}
           >
-            <Presence />
-          </RoomProvider>
-        </LiveblocksProvider>
-      )}
+            <Controls position="bottom-left" style={{ marginBottom: 100 }} />
+            <MiniMap
+              nodeColor={(n) => NODE_COLORS[n.type ?? "claude"] ?? "#476083"}
+              position="bottom-right"
+              style={{ marginBottom: 100 }}
+            />
+          </ReactFlow>
+        </div>
 
-      {/* Taskbar — Layer 3 glassmorphism, fixed bottom center */}
-      <Toolbar
-        onAddNode={spawnNode}
-        onBranch={spawnBranch}
-        onShare={activateRoom}
-        roomId={roomId}
-        workspaceId={workspaceId}
-      />
-    </div>
+        {/* Connection line overlay — follows cursor from source node */}
+        {connectingFrom && mouseScreen && sourcePos && (
+          <svg
+            className="fixed inset-0 w-screen h-screen pointer-events-none"
+            style={{ zIndex: 9999 }}
+          >
+            <line
+              x1={sourcePos.x}
+              y1={sourcePos.y}
+              x2={mouseScreen.x}
+              y2={mouseScreen.y}
+              stroke="#00BFFF"
+              strokeWidth={2}
+              strokeDasharray="8 4"
+              opacity={0.8}
+            />
+            <circle
+              cx={mouseScreen.x}
+              cy={mouseScreen.y}
+              r={6}
+              fill="none"
+              stroke="#00BFFF"
+              strokeWidth={1.5}
+              opacity={0.6}
+            />
+          </svg>
+        )}
+
+        {/* Multiplayer cursors — only active when room is joined */}
+        {roomId && process.env.NEXT_PUBLIC_LIVEBLOCKS_PUBLIC_KEY && (
+          <LiveblocksProvider publicApiKey={process.env.NEXT_PUBLIC_LIVEBLOCKS_PUBLIC_KEY}>
+            <RoomProvider
+              id={roomId}
+              initialPresence={{
+                cursor: null,
+                name: `User ${Math.floor(Math.random() * 900 + 100)}`,
+                color: CURSOR_COLORS[Math.floor(Math.random() * CURSOR_COLORS.length)],
+              }}
+            >
+              <Presence />
+            </RoomProvider>
+          </LiveblocksProvider>
+        )}
+
+        {/* Taskbar — Layer 3 glassmorphism, fixed bottom center */}
+        <Toolbar
+          onAddNode={spawnNode}
+          onBranch={spawnBranch}
+          onShare={activateRoom}
+          roomId={roomId}
+          workspaceId={workspaceId}
+        />
+      </div>
+    </ConnectContext.Provider>
   );
 }
 

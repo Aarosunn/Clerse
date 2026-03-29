@@ -12,16 +12,7 @@ import {
   LoadingIcon,
   SparkleIcon,
 } from "../Icons";
-
-function WindowControls() {
-  return (
-    <div className="flex items-center gap-1.5">
-      <div className="w-3 h-3 rounded-full shadow-sm" style={{ background: "#ff5f56" }} />
-      <div className="w-3 h-3 rounded-full shadow-sm" style={{ background: "#ffbd2e" }} />
-      <div className="w-3 h-3 rounded-full shadow-sm" style={{ background: "#27c93f" }} />
-    </div>
-  );
-}
+import WindowControls from "./WindowControls";
 
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
 
@@ -33,6 +24,7 @@ export default function PDFNode({ id, data: rawData }: NodeProps<any>) {
   const [pageCount, setPageCount] = useState(data.pageCount);
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [minimized, setMinimized] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const { addNodes, addEdges, getNode } = useReactFlow();
 
@@ -100,7 +92,7 @@ export default function PDFNode({ id, data: rawData }: NodeProps<any>) {
       <div className="flex items-center justify-between px-4 py-3" style={{ padding: "12px 16px" }}>
         {/* Mac controls + file name */}
         <div className="flex items-center gap-3">
-          <WindowControls />
+          <WindowControls nodeId={id} minimized={minimized} onToggleMinimize={() => setMinimized((m) => !m)} />
           <DescriptionIcon size={16} className="text-primary" />
           <span
             className="font-label uppercase tracking-widest text-on-surface truncate max-w-[160px]"
@@ -120,7 +112,7 @@ export default function PDFNode({ id, data: rawData }: NodeProps<any>) {
       </div>
 
       {/* PDF Preview area */}
-      <div style={{ padding: "0 16px 16px" }}>
+      {!minimized && <div style={{ padding: "0 16px 16px" }}>
         {!extracted ? (
           /* Drop zone */
           <div
@@ -224,7 +216,7 @@ export default function PDFNode({ id, data: rawData }: NodeProps<any>) {
             </div>
           </div>
         )}
-      </div>
+      </div>}
 
       <Handle type="source" position={Position.Bottom} />
     </div>

@@ -5,16 +5,7 @@ import { Handle, Position, NodeProps, useReactFlow, NodeResizer } from "@xyflow/
 import { ImageNodeData, ClaudeNodeData } from "@/types/nodes";
 import { buildImageMessage } from "@/lib/conversations";
 import { ImageIcon, AddPhotoIcon, SparkleIcon } from "../Icons";
-
-function WindowControls() {
-  return (
-    <div className="flex items-center gap-1.5">
-      <div className="w-3 h-3 rounded-full" style={{ background: "#ff5f56" }} />
-      <div className="w-3 h-3 rounded-full" style={{ background: "#ffbd2e" }} />
-      <div className="w-3 h-3 rounded-full" style={{ background: "#27c93f" }} />
-    </div>
-  );
-}
+import WindowControls from "./WindowControls";
 
 const ACCENT = "#7b5ea7";
 
@@ -25,6 +16,7 @@ export default function ImageNode({ id, data: rawData }: NodeProps<any>) {
   const [mimeType, setMimeType] = useState(data.mimeType);
   const [fileName, setFileName] = useState(data.fileName);
   const [question, setQuestion] = useState("");
+  const [minimized, setMinimized] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const { addNodes, addEdges, getNode } = useReactFlow();
 
@@ -75,67 +67,69 @@ export default function ImageNode({ id, data: rawData }: NodeProps<any>) {
         className="flex items-center gap-3 px-4 py-3"
         style={{ borderBottom: "1px solid rgba(188,200,209,0.12)", background: `rgba(123,94,167,0.04)` }}
       >
-        <WindowControls />
+        <WindowControls nodeId={id} minimized={minimized} onToggleMinimize={() => setMinimized((m) => !m)} />
         <ImageIcon size={16} style={{ color: ACCENT }} />
         <span className="font-label uppercase tracking-widest text-on-surface-variant" style={{ fontSize: 10 }}>Image</span>
       </div>
 
-      <div style={{ padding: "14px 16px 16px" }} className="flex flex-col gap-3">
-        {!base64 ? (
-          <div
-            className="rounded-xl flex flex-col items-center justify-center cursor-pointer hover:brightness-95 transition-all"
-            style={{
-              minHeight: 140,
-              border: "2px dashed rgba(123,94,167,0.25)",
-              background: `rgba(123,94,167,0.04)`,
-            }}
-            onClick={() => inputRef.current?.click()}
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => {
-              e.preventDefault();
-              const file = e.dataTransfer.files[0];
-              if (file?.type.startsWith("image/")) handleFile(file);
-            }}
-          >
-            <AddPhotoIcon size={36} style={{ color: ACCENT, opacity: 0.4 }} />
-            <p className="font-label uppercase tracking-widest mt-2" style={{ fontSize: 10, color: "#6d7981" }}>
-              Drop image or click
-            </p>
-            <input
-              ref={inputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
-            />
-          </div>
-        ) : (
-          <>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={`data:${mimeType};base64,${base64}`}
-              alt={fileName}
-              className="w-full rounded-xl object-cover"
-              style={{ maxHeight: 180 }}
-            />
-            <input
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-              placeholder="Ask about this image… (optional)"
-              className="font-body text-on-surface placeholder:text-on-surface-variant/40 outline-none rounded-xl px-3 py-2.5"
-              style={{ background: "#f0ede8", border: "none", fontSize: 12 }}
-            />
-            <button
-              onClick={analyzeImage}
-              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-white font-label uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all"
-              style={{ fontSize: 10, background: ACCENT }}
+      {!minimized && (
+        <div style={{ padding: "14px 16px 16px" }} className="flex flex-col gap-3">
+          {!base64 ? (
+            <div
+              className="rounded-xl flex flex-col items-center justify-center cursor-pointer hover:brightness-95 transition-all"
+              style={{
+                minHeight: 140,
+                border: "2px dashed rgba(123,94,167,0.25)",
+                background: `rgba(123,94,167,0.04)`,
+              }}
+              onClick={() => inputRef.current?.click()}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                const file = e.dataTransfer.files[0];
+                if (file?.type.startsWith("image/")) handleFile(file);
+              }}
             >
-              <SparkleIcon size={14} />
-              Analyze with Claude
-            </button>
-          </>
-        )}
-      </div>
+              <AddPhotoIcon size={36} style={{ color: ACCENT, opacity: 0.4 }} />
+              <p className="font-label uppercase tracking-widest mt-2" style={{ fontSize: 10, color: "#6d7981" }}>
+                Drop image or click
+              </p>
+              <input
+                ref={inputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+              />
+            </div>
+          ) : (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={`data:${mimeType};base64,${base64}`}
+                alt={fileName}
+                className="w-full rounded-xl object-cover"
+                style={{ maxHeight: 180 }}
+              />
+              <input
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                placeholder="Ask about this image… (optional)"
+                className="font-body text-on-surface placeholder:text-on-surface-variant/40 outline-none rounded-xl px-3 py-2.5"
+                style={{ background: "#f0ede8", border: "none", fontSize: 12 }}
+              />
+              <button
+                onClick={analyzeImage}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-white font-label uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all"
+                style={{ fontSize: 10, background: ACCENT }}
+              >
+                <SparkleIcon size={14} />
+                Analyze with Claude
+              </button>
+            </>
+          )}
+        </div>
+      )}
 
       <Handle type="source" position={Position.Bottom} />
     </div>

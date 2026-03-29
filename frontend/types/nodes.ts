@@ -6,7 +6,10 @@ export type NodeKind =
   | "youtube"
   | "article"
   | "image"
-  | "flashcard";
+  | "text"
+  | "flashcard"
+  | "quiz"
+  | "pdfdoc";
 
 interface BaseNodeData {
   kind: NodeKind;
@@ -49,6 +52,11 @@ export interface ImageNodeData extends BaseNodeData {
   fileName: string;
 }
 
+export interface TextNodeData extends BaseNodeData {
+  kind: "text";
+  content: string;
+}
+
 export interface FlashCard {
   front: string;
   back: string;
@@ -60,10 +68,32 @@ export interface FlashcardNodeData extends BaseNodeData {
   sourceNodeId: string;
 }
 
+export interface QuizQuestion {
+  question: string;
+  options: string[];
+  correct_answer: string;
+  explanation: string;
+}
+
+export interface QuizNodeData extends BaseNodeData {
+  kind: "quiz";
+  questions: QuizQuestion[];
+  sourceNodeId: string;
+}
+
+export interface PDFDocNodeData extends BaseNodeData {
+  kind: "pdfdoc";
+  markdown: string;
+  title: string;
+}
+
 export type AnyNodeData =
   | ClaudeNodeData
   | PDFNodeData
   | YouTubeNodeData
   | ArticleNodeData
   | ImageNodeData
-  | FlashcardNodeData;
+  | TextNodeData
+  | FlashcardNodeData
+  | QuizNodeData
+  | PDFDocNodeData;

@@ -5,16 +5,7 @@ import { Handle, Position, NodeProps, useReactFlow, NodeResizer } from "@xyflow/
 import { ArticleNodeData, ClaudeNodeData } from "@/types/nodes";
 import { buildUserMessage } from "@/lib/conversations";
 import { ArticleIcon, DownloadIcon, SparkleIcon } from "../Icons";
-
-function WindowControls() {
-  return (
-    <div className="flex items-center gap-1.5">
-      <div className="w-3 h-3 rounded-full" style={{ background: "#ff5f56" }} />
-      <div className="w-3 h-3 rounded-full" style={{ background: "#ffbd2e" }} />
-      <div className="w-3 h-3 rounded-full" style={{ background: "#27c93f" }} />
-    </div>
-  );
-}
+import WindowControls from "./WindowControls";
 
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
 
@@ -25,6 +16,7 @@ export default function ArticleNode({ id, data: rawData }: NodeProps<any>) {
   const [content, setContent] = useState(data.content);
   const [title, setTitle] = useState(data.title);
   const [loading, setLoading] = useState(false);
+  const [minimized, setMinimized] = useState(false);
   const ACCENT = "#4a7c59";
   const { addNodes, addEdges, getNode } = useReactFlow();
 
@@ -79,13 +71,14 @@ export default function ArticleNode({ id, data: rawData }: NodeProps<any>) {
         className="flex items-center gap-3 px-4 py-3"
         style={{ borderBottom: "1px solid rgba(188,200,209,0.12)", background: `rgba(74,124,89,0.04)` }}
       >
-        <WindowControls />
+        <WindowControls nodeId={id} minimized={minimized} onToggleMinimize={() => setMinimized((m) => !m)} />
         <ArticleIcon size={16} style={{ color: ACCENT }} />
         <span className="font-label uppercase tracking-widest text-on-surface-variant" style={{ fontSize: 10 }}>Article</span>
       </div>
 
-      <div style={{ padding: "14px 16px 16px" }} className="flex flex-col gap-3">
-        <div className="flex gap-2 items-center">
+      {!minimized && (
+        <div style={{ padding: "14px 16px 16px" }} className="flex flex-col gap-3">
+          <div className="flex gap-2 items-center">
           <input
             value={url}
             onChange={(e) => setUrl(e.target.value)}
@@ -130,7 +123,8 @@ export default function ArticleNode({ id, data: rawData }: NodeProps<any>) {
             </button>
           </>
         )}
-      </div>
+        </div>
+      )}
 
       <Handle type="source" position={Position.Bottom} />
     </div>

@@ -2,10 +2,14 @@
 
 import { useState, useRef, useCallback } from "react";
 import { Handle, Position, NodeProps, useReactFlow, NodeResizer } from "@xyflow/react";
+import ReactMarkdown from "react-markdown";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 import { ClaudeNodeData } from "@/types/nodes";
 import { Message } from "@/types/messages";
 import { buildUserMessage, buildAssistantMessage, getTextContent } from "@/lib/conversations";
 import ModelSelector from "../ModelSelector";
+import WindowControls from "./WindowControls";
 import {
   SparkleIcon,
   CheckCircleIcon,
@@ -22,17 +26,6 @@ import {
   ThumbUpIcon,
 } from "../Icons";
 
-/* MacOS-style window control dots */
-function WindowControls() {
-  return (
-    <div className="flex items-center gap-1.5">
-      <div className="w-3 h-3 rounded-full" style={{ background: "#ff5f57" }} />
-      <div className="w-3 h-3 rounded-full" style={{ background: "#ffbd2e" }} />
-      <div className="w-3 h-3 rounded-full" style={{ background: "#27c93f" }} />
-    </div>
-  );
-}
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
   const data = rawData as ClaudeNodeData;
@@ -45,6 +38,7 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
   /* CHAT_NODE_DESIGN.md §2 — "Selecting" state */
   const [isSelecting, setIsSelecting] = useState(false);
   const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set());
+  const [minimized, setMinimized] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -173,7 +167,7 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
       >
         {/* Left: macOS dots + title */}
         <div className="flex items-center gap-3">
-          <WindowControls />
+          <WindowControls nodeId={id} minimized={minimized} onToggleMinimize={() => setMinimized((m) => !m)} />
           <span
             className="font-headline font-bold text-primary"
             style={{ fontSize: 13 }}
@@ -233,7 +227,7 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
       </div>
 
       {/* ── Message area §3 ── */}
-      <div
+      {!minimized && <div
         className="flex-1 overflow-y-auto"
         style={{
           padding: "24px 32px",
@@ -299,8 +293,13 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <div className="font-body text-sm text-on-surface leading-relaxed">
-                      {getTextContent(msg.content)}
+                    <div className="font-body text-sm text-on-surface leading-relaxed prose prose-sm max-w-none">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkMath]}
+                        rehypePlugins={[rehypeKatex]}
+                      >
+                        {getTextContent(msg.content)}
+                      </ReactMarkdown>
                     </div>
 
                     {/* §3C — Action bar */}
@@ -398,8 +397,10 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
         </div>
       </div>
 
+      }
+
       {/* ── Compose input §4 ── */}
-      <div
+      {!minimized && <div
         className="shrink-0"
         style={{
           background: "rgba(71,96,131,0.04)",
@@ -434,7 +435,7 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
                 sendMessage();
               }
             }}
-            placeholder="Message Claude..."
+            placeholder="Reply to the stream..."
             disabled={streaming}
             rows={1}
             className="w-full resize-none font-body text-sm text-on-surface placeholder:text-on-surface-variant/40 outline-none disabled:opacity-50 overflow-hidden"
@@ -477,8 +478,14 @@ export default function ClaudeNode({ id, data: rawData }: NodeProps<any>) {
             <LocationIcon size={11} />
             Spatial Context
           </button>
+          <span
+            className="font-label uppercase tracking-widest ml-auto"
+            style={{ fontSize: 9, color: "rgba(61,72,80,0.35)" }}
+          >
+            Press ⌘ + Enter to Flow
+          </span>
         </div>
-      </div>
+      </div>}
 
       <Handle type="source" position={Position.Bottom} />
     </div>
