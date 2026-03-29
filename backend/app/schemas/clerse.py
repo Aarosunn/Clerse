@@ -54,3 +54,35 @@ class MessageResponse(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class ExtractYouTubeRequest(BaseModel):
+    url: str
+    workspace_id: uuid.UUID
+    node_id: str
+
+
+class ExtractArticleRequest(BaseModel):
+    url: str
+    workspace_id: uuid.UUID
+    node_id: str
+
+
+class PDFPageResponse(BaseModel):
+    page: int
+    text: str
+
+
+class ExtractPDFResponse(BaseModel):
+    pages: list[PDFPageResponse]
+    filename: str
+
+
+class ExtractYouTubeResponse(BaseModel):
+    transcript: str
+    title: str
+
+
+class ExtractArticleResponse(BaseModel):
+    text: str
+    title: str
