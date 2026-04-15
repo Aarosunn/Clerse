@@ -4,7 +4,7 @@ An infinite spatial canvas where Claude conversations are nodes. Branch any conv
 
 ---
 
-## Three Demo Moments
+## Three Main Features
 
 1. **Branch spatially** — right-click any message and fork a new conversation node onto the canvas. The original is untouched.
 2. **Parallel streams** — send messages to two nodes at once and watch both stream simultaneously, independently.
